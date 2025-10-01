@@ -23,6 +23,8 @@ spring:
     port: 5672
     username: tjxt
     password: 123321
+    virtual-host: /tjxt
+    connection-timeout: 15000
 
   data:
     redis:
