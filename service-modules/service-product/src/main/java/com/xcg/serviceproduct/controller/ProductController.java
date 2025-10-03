@@ -39,8 +39,8 @@ public class ProductController {
     private final RabbitTemplate rabbitTemplate;
     @GetMapping("list")
     public Result<List<Product>> list() {
-//        return Result.success(productService.list());
-        throw new BizException(500,"异常");
+        return Result.success(productService.list());
+//        throw new BizException(500,"异常");
     }
 
     @PostMapping("send-message")

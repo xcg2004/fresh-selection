@@ -27,11 +27,15 @@ spring:
 
   data:
     redis:
-       host: 127.0.0.1
-       port: 6379
-       database: 0
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+      password: 123321
 
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+jwt:
+  secret: QVJLeHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg=
