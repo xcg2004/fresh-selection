@@ -405,8 +405,8 @@ CREATE TABLE `banner`
 
 -- 插入用户数据
 INSERT INTO `user` (`username`, `password`, `phone`, `email`, `nickname`, `avatar`, `gender`)
-VALUES ('user001', '$2a$10$xxxxxxxx', '13800138001', 'user001@example.com', '小明', '/avatars/default.png', 1),
-       ('user002', '$2a$10$xxxxxxxx', '13900139001', 'user002@example.com', '小红', '/avatars/default.png', 2);
+VALUES ('user001', 'e10adc3949ba59abbe56e057f20f883e', '13800138001', 'user001@example.com', '小明', '/avatars/default.png', 1),
+       ('user002', 'e10adc3949ba59abbe56e057f20f883e', '13900139001', 'user002@example.com', '小红', '/avatars/default.png', 2);
 
 -- 插入分类数据
 INSERT INTO `category` (`name`, `parent_id`, `level`, `icon`, `sort`)

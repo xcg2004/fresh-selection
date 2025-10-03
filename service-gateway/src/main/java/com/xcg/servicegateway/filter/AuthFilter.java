@@ -148,7 +148,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
     private Mono<Void> forbidden(ServerHttpResponse response) {
         response.setStatusCode(HttpStatus.FORBIDDEN);
         response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
-        String body = "{\"code\": 403, \"message\": \"认证失败或权限不足\"}";
+        String body = "{\"code\": 403, \"message\": \"登录状态已失效\"}";
         return response.writeWith(Mono.just(response.bufferFactory().wrap(body.getBytes())));
     }
 
