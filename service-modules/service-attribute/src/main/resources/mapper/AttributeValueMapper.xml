@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcg.serviceattribute.mapper.AttributeValueMapper">
+
+    <insert id="insertBatchSomeColumn"
+            parameterType="java.util.List">
+        insert into attribute_value (attribute_id, value, extended_info, sort)
+        values
+        <foreach item="item" collection="values" separator="," >
+            (#{item.attributeId}, #{item.value}, #{item.extendedInfo}, #{item.sort})
+        </foreach>
+    </insert>
+    <select id="selectMaxSort" resultType="java.lang.Integer" parameterType="java.lang.Long">
+        select max(sort) from attribute_value where attribute_id = #{attributeId}
+    </select>
+</mapper>

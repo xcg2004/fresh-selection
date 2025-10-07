@@ -23,6 +23,7 @@
         <module>fresh-common</module>
         <module>service-gateway</module>
         <module>service-modules</module>
+        <module>service-modules/service-attribute</module>
     </modules>
 
 
