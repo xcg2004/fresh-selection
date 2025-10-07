@@ -154,6 +154,6 @@ public class AuthFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return 0; // 数值越小优先级越高
+        return 1; // 数值越小优先级越高
     }
 }
