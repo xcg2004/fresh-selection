@@ -1,6 +1,8 @@
 package com.xcg.freshcommon.core.handler;
 
 import com.xcg.freshcommon.core.exception.BizException;
+import feign.FeignException;
+import feign.RetryableException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.validation.ObjectError;
 
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,6 +21,33 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+
+    /**
+     * 处理Feign调用异常
+     */
+    @ExceptionHandler({RetryableException.class, FeignException.class})
+    public ResponseEntity<Map<String, Object>> handleFeignException(Exception e) {
+        log.error("Feign调用异常: ", e);
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 500);
+        result.put("message", "服务调用失败");
+        result.put("success", false);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+    }
+
+    /**
+     * 处理网络相关异常
+     */
+    @ExceptionHandler({UnknownHostException.class, ConnectException.class})
+    public ResponseEntity<Map<String, Object>> handleNetworkException(Exception e) {
+        log.error("网络连接异常: ", e);
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 500);
+        result.put("message", "服务连接失败");
+        result.put("success", false);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+    }
 
     /**
      * 处理数据库唯一约束违反异常

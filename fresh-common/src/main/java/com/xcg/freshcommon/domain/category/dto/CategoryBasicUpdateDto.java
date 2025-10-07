@@ -1,4 +1,4 @@
-package com.xcg.servicecategory.domain.dto;
+package com.xcg.freshcommon.domain.category.dto;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

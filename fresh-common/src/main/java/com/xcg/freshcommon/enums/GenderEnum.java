@@ -1,4 +1,4 @@
-package com.xcg.serviceuser.enums;
+package com.xcg.freshcommon.enums;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonValue;

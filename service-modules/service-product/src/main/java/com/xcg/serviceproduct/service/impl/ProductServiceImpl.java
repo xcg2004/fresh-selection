@@ -1,6 +1,6 @@
 package com.xcg.serviceproduct.service.impl;
 
-import com.xcg.serviceproduct.domain.entity.Product;
+import com.xcg.freshcommon.domain.product.entity.Product;
 import com.xcg.serviceproduct.mapper.ProductMapper;
 import com.xcg.serviceproduct.service.IProductService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

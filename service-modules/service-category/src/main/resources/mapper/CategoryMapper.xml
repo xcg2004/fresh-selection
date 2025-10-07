@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.xcg.servicecategory.mapper.CategoryMapper">
 
-    <insert id="save" parameterType="com.xcg.servicecategory.domain.entity.Category" useGeneratedKeys="true" keyProperty="id">
+    <insert id="save" parameterType="com.xcg.freshcommon.domain.category.entity.Category" useGeneratedKeys="true" keyProperty="id">
         insert into category(name,parent_id,level,icon,sort)
         values(#{name},#{parentId},#{level},#{icon},#{sort})
     </insert>
@@ -41,7 +41,7 @@
     </select>
 
     <!-- 悲观锁查询 -->
-    <select id="selectByIdForUpdate" resultType="com.xcg.servicecategory.domain.entity.Category">
+    <select id="selectByIdForUpdate" resultType="com.xcg.freshcommon.domain.category.entity.Category">
         SELECT * FROM category
         WHERE id = #{id} AND status = 1
             FOR UPDATE

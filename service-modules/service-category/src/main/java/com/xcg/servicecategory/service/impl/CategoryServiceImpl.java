@@ -4,11 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.xcg.freshcommon.core.exception.BizException;
 import com.xcg.freshcommon.core.utils.Result;
-import com.xcg.servicecategory.domain.dto.CategoryBasicUpdateDto;
-import com.xcg.servicecategory.domain.dto.CategoryDto;
-import com.xcg.servicecategory.domain.dto.CategoryMoveRequest;
-import com.xcg.servicecategory.domain.entity.Category;
-import com.xcg.servicecategory.domain.vo.CategoryVO;
+import com.xcg.freshcommon.domain.category.dto.CategoryBasicUpdateDto;
+import com.xcg.freshcommon.domain.category.dto.CategoryDto;
+import com.xcg.freshcommon.domain.category.dto.CategoryMoveRequest;
+import com.xcg.freshcommon.domain.category.entity.Category;
+import com.xcg.freshcommon.domain.category.vo.CategoryVO;
 import com.xcg.servicecategory.mapper.CategoryMapper;
 import com.xcg.servicecategory.service.ICategoryService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -419,5 +420,18 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         // 8. 执行删除
         boolean success = removeById(id);
         return Result.success(success);
+    }
+
+    @Override
+    public Result<CategoryVO> selectById(Long id) {
+        // 是否存在该分类
+        Category category = query().eq("id", id).eq("status", 1).one();
+        CategoryVO categoryVO = convertToVO(category);
+        // 是否存在子级分类
+        boolean b = query().eq("parent_id", id).eq("status", 1).exists();
+        if(b){
+            categoryVO.setChildren(Collections.emptyList());
+        }
+        return Result.success(categoryVO);
     }
 }

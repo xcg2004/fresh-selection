@@ -2,10 +2,11 @@ package com.xcg.servicecategory.controller;
 
 
 import com.xcg.freshcommon.core.utils.Result;
-import com.xcg.servicecategory.domain.dto.CategoryBasicUpdateDto;
-import com.xcg.servicecategory.domain.dto.CategoryDto;
-import com.xcg.servicecategory.domain.dto.CategoryMoveRequest;
-import com.xcg.servicecategory.domain.vo.CategoryVO;
+import com.xcg.freshcommon.domain.category.dto.CategoryBasicUpdateDto;
+import com.xcg.freshcommon.domain.category.dto.CategoryDto;
+import com.xcg.freshcommon.domain.category.dto.CategoryMoveRequest;
+import com.xcg.freshcommon.domain.category.entity.Category;
+import com.xcg.freshcommon.domain.category.vo.CategoryVO;
 import com.xcg.servicecategory.service.ICategoryService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -76,11 +77,17 @@ public class CategoryController {
         return categoryService.updateSwap(firstId, secondId);
     }
 
-    //todo test
     @DeleteMapping("/{id}")
     @ApiOperation("删除分类")
     public Result<Boolean> delete(@PathVariable Long id) {
         log.info("删除分类: {}", id);
         return categoryService.deleteById(id);
+    }
+
+    @GetMapping("/{id}")
+    @ApiOperation("根据id获取分类")
+    public Result<CategoryVO> getById(@PathVariable Long id) {
+        log.info("根据id获取分类: {}", id);
+        return categoryService.selectById(id);
     }
 }

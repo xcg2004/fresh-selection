@@ -1,4 +1,4 @@
-package com.xcg.serviceuser.domain.dto;
+package com.xcg.freshcommon.domain.user.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

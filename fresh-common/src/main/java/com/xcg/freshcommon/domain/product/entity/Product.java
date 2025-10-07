@@ -1,4 +1,4 @@
-package com.xcg.serviceproduct.domain.entity;
+package com.xcg.freshcommon.domain.product.entity;
 
 import java.math.BigDecimal;
 import com.baomidou.mybatisplus.annotation.TableName;

@@ -1,4 +1,4 @@
-package com.xcg.servicecategory.enums;
+package com.xcg.freshcommon.enums;
 
 public enum MovePosition {
     FIRST,   // 置顶

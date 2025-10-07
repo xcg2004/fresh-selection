@@ -1,6 +1,6 @@
 package com.xcg.serviceproduct.mapper;
 
-import com.xcg.serviceproduct.domain.entity.Product;
+import com.xcg.freshcommon.domain.product.entity.Product;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

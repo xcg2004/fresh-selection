@@ -1,6 +1,6 @@
 package com.xcg.serviceproduct.service;
 
-import com.xcg.serviceproduct.domain.entity.Product;
+import com.xcg.freshcommon.domain.product.entity.Product;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**

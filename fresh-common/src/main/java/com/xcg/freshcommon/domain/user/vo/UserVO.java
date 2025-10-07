@@ -1,4 +1,4 @@
-package com.xcg.serviceuser.domain.vo;
+package com.xcg.freshcommon.domain.user.vo;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;

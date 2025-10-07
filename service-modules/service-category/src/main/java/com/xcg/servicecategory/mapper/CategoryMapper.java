@@ -1,6 +1,6 @@
 package com.xcg.servicecategory.mapper;
 
-import com.xcg.servicecategory.domain.entity.Category;
+import com.xcg.freshcommon.domain.category.entity.Category;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import java.util.List;

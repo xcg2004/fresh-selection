@@ -2,10 +2,9 @@ package com.xcg.serviceuser.controller;
 
 import com.xcg.freshcommon.core.utils.JwtUtil;
 import com.xcg.freshcommon.core.utils.Result;
-import com.xcg.freshcommon.rabbitmq.constants.RedisConstants;
-import com.xcg.serviceuser.domain.dto.UserLoginDto;
-import com.xcg.serviceuser.domain.dto.UserRegisterDto;
-import com.xcg.serviceuser.domain.vo.UserVO;
+import com.xcg.freshcommon.domain.user.dto.UserLoginDto;
+import com.xcg.freshcommon.domain.user.dto.UserRegisterDto;
+import com.xcg.freshcommon.domain.user.vo.UserVO;
 import com.xcg.serviceuser.service.IUserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

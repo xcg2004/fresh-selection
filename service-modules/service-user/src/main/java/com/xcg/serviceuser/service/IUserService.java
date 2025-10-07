@@ -1,11 +1,11 @@
 package com.xcg.serviceuser.service;
 
 import com.xcg.freshcommon.core.utils.Result;
-import com.xcg.serviceuser.domain.dto.UserLoginDto;
-import com.xcg.serviceuser.domain.dto.UserRegisterDto;
-import com.xcg.serviceuser.domain.entity.User;
+import com.xcg.freshcommon.domain.user.dto.UserLoginDto;
+import com.xcg.freshcommon.domain.user.dto.UserRegisterDto;
+import com.xcg.freshcommon.domain.user.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.xcg.serviceuser.domain.vo.UserVO;
+import com.xcg.freshcommon.domain.user.vo.UserVO;
 
 /**
  * <p>

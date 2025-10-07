@@ -1,6 +1,6 @@
 package com.xcg.serviceuser.mapper;
 
-import com.xcg.serviceuser.domain.entity.User;
+import com.xcg.freshcommon.domain.user.entity.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

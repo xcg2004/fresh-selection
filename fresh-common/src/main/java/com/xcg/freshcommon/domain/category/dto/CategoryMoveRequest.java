@@ -1,6 +1,7 @@
-package com.xcg.servicecategory.domain.dto;
+package com.xcg.freshcommon.domain.category.dto;
 
-import com.xcg.servicecategory.enums.MovePosition;
+
+import com.xcg.freshcommon.enums.MovePosition;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 

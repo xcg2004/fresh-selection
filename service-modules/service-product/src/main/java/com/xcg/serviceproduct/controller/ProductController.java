@@ -2,9 +2,8 @@ package com.xcg.serviceproduct.controller;
 
 
 
-import com.xcg.freshcommon.core.exception.BizException;
 import com.xcg.freshcommon.core.utils.Result;
-import com.xcg.serviceproduct.domain.entity.Product;
+import com.xcg.freshcommon.domain.product.entity.Product;
 import com.xcg.serviceproduct.service.IProductService;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.xcg.serviceuser.domain.dto;
+package com.xcg.freshcommon.domain.user.dto;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;

@@ -1,15 +1,14 @@
 package com.xcg.serviceuser.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.xcg.freshcommon.core.utils.JwtUtil;
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.rabbitmq.constants.RedisConstants;
-import com.xcg.serviceuser.domain.dto.UserLoginDto;
-import com.xcg.serviceuser.domain.dto.UserRegisterDto;
-import com.xcg.serviceuser.domain.entity.User;
-import com.xcg.serviceuser.domain.vo.UserVO;
-import com.xcg.serviceuser.enums.GenderEnum;
+import com.xcg.freshcommon.domain.user.dto.UserLoginDto;
+import com.xcg.freshcommon.domain.user.dto.UserRegisterDto;
+import com.xcg.freshcommon.domain.user.entity.User;
+import com.xcg.freshcommon.domain.user.vo.UserVO;
+import com.xcg.freshcommon.enums.GenderEnum;
 import com.xcg.serviceuser.mapper.UserMapper;
 import com.xcg.serviceuser.service.IUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

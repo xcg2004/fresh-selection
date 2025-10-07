@@ -1,12 +1,12 @@
 package com.xcg.servicecategory.service;
 
 import com.xcg.freshcommon.core.utils.Result;
-import com.xcg.servicecategory.domain.dto.CategoryBasicUpdateDto;
-import com.xcg.servicecategory.domain.dto.CategoryDto;
-import com.xcg.servicecategory.domain.dto.CategoryMoveRequest;
-import com.xcg.servicecategory.domain.entity.Category;
+import com.xcg.freshcommon.domain.category.dto.CategoryBasicUpdateDto;
+import com.xcg.freshcommon.domain.category.dto.CategoryDto;
+import com.xcg.freshcommon.domain.category.dto.CategoryMoveRequest;
+import com.xcg.freshcommon.domain.category.entity.Category;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.xcg.servicecategory.domain.vo.CategoryVO;
+import com.xcg.freshcommon.domain.category.vo.CategoryVO;
 
 import java.util.List;
 
@@ -35,4 +35,6 @@ public interface ICategoryService extends IService<Category> {
     Result<Boolean> moveCategory(CategoryMoveRequest request);
 
     Result<Boolean> deleteById(Long id);
+
+    Result<CategoryVO> selectById(Long id);
 }
