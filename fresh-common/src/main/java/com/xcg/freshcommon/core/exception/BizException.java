@@ -49,6 +49,10 @@ public class BizException extends RuntimeException {
         super(throwable);
     }
 
+    public BizException(String message){
+        super(message);
+    }
+
     // 移除getMessage()方法，让父类的方法生效
     // 移除getCode()方法，使用你自己定义的getCode()
 }

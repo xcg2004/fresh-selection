@@ -26,11 +26,15 @@ spring:
         - id: order-service
           uri: lb://service-order
           predicates:
-            - Path=/api/order/**
+              - Path=/api/order/**
         - id: payment-service
           uri: lb://service-payment
           predicates:
               - Path=/api/payment/**
+        - id: category-service
+          uri: lb://service-category
+          predicates:
+              - Path=/api/category/**
   data:
     redis:
       host: 127.0.0.1
