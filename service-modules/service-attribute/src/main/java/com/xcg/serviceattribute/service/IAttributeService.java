@@ -19,9 +19,17 @@ import java.util.List;
  */
 public interface IAttributeService extends IService<Attribute> {
 
-    List<AttributeVO> listWithValue(long categoryId);
+    Result<List<AttributeVO>> listWithValue(long categoryId);
 
     Result<Boolean> createWithValues(long categoryId, List<AttributeDto> attributeDto);
 
     Result<Boolean> addValues(Long id, List<AttributeValueDto> attributeValueDto);
+
+    Result<List<Long>> getAttrIdsByCategoryId(Long categoryId);
+
+    Result<Boolean> checkAttributeValueValid(Long attributeId, Long attributeValueId);
+
+    Result<String> getAttributeName(Long attributeId);
+
+    Result<String> getAttributeValue(Long attributeValueId);
 }

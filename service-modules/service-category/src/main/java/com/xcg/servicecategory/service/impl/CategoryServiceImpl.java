@@ -424,14 +424,31 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     @Override
     public Result<CategoryVO> selectById(Long id) {
-        // 是否存在该分类
+        // 检查分类是否存在
         Category category = query().eq("id", id).eq("status", 1).one();
-        CategoryVO categoryVO = convertToVO(category);
-        // 是否存在子级分类
-        boolean b = query().eq("parent_id", id).eq("status", 1).exists();
-        if(b){
-            categoryVO.setChildren(Collections.emptyList());
+        if (category == null) {
+            return Result.error("分类不存在或已禁用");
         }
+
+        // 转换为VO
+        CategoryVO categoryVO = convertToVO(category);
+
+        // 查询子分类
+        List<Category> childCategories = query()
+                .eq("parent_id", id)
+                .eq("status", 1)
+                .orderByAsc("sort")
+                .list();
+
+        if (!childCategories.isEmpty()) {
+            // 如果有子分类，转换为VO列表
+            List<CategoryVO> childVOs = childCategories.stream()
+                    .map(this::convertToVO)
+                    .collect(Collectors.toList());
+            categoryVO.setChildren(childVOs);
+        }
+        // 如果没有子分类，children保持为null，hasChildren()会返回false
+
         return Result.success(categoryVO);
     }
 }

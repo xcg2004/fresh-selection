@@ -1,5 +1,7 @@
 package com.xcg.serviceproduct.service;
 
+import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.domain.product.dto.ProductDto;
 import com.xcg.freshcommon.domain.product.entity.Product;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -13,4 +15,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IProductService extends IService<Product> {
 
+    Result<Long> createProduct(ProductDto productDto);
 }

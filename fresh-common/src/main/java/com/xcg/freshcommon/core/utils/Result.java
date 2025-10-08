@@ -31,4 +31,8 @@ public class Result<T>{
     public static <T> Result<T> error(String message){
         return new Result<>(500,null,message);
     }
+
+    public boolean isSuccess() {
+        return code == 200;
+    }
 }

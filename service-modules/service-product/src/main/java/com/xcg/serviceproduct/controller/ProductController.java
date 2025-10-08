@@ -3,19 +3,18 @@ package com.xcg.serviceproduct.controller;
 
 
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.domain.product.dto.ProductDto;
 import com.xcg.freshcommon.domain.product.entity.Product;
 import com.xcg.serviceproduct.service.IProductService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -35,19 +34,25 @@ import java.util.List;
 public class ProductController {
 
     private final IProductService productService;
+
     private final RabbitTemplate rabbitTemplate;
-    @GetMapping("list")
+    @GetMapping("/list")
     public Result<List<Product>> list() {
         return Result.success(productService.list());
 //        throw new BizException(500,"异常");
     }
 
-    @PostMapping("send-message")
+    @PostMapping("/send-message")
     public Result<String> sendMessage() {
         Message message = MessageBuilder.withBody("hello world".getBytes()).build();
         rabbitTemplate.send("my.exchange", "my.routing.key", message);
         return Result.success("发送成功");
     }
 
+    @PostMapping("/create")
+    @ApiOperation("创建商品")
+    public Result<Long> createProduct(@RequestBody @Valid ProductDto productDto) {
+        return productService.createProduct(productDto);
+    }
 
 }

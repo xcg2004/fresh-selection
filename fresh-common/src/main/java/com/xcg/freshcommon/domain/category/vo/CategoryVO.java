@@ -39,4 +39,8 @@ public class CategoryVO implements Serializable {
     @ApiModelProperty("子级分类")
     private List<CategoryVO> children;
 
+
+    public Boolean hasChildren(){
+        return children != null && !children.isEmpty();
+    }
 }

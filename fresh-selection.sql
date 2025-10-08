@@ -37,6 +37,7 @@ CREATE TABLE `user`
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_username` (`username`),
     UNIQUE KEY `uk_phone` (`phone`),
+    UNIQUE KEY `uk_email` (`email`),
     KEY `idx_create_time` (`create_time`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT ='用户表';
@@ -410,11 +411,48 @@ VALUES ('user001', 'e10adc3949ba59abbe56e057f20f883e', '13800138001', 'user001@e
 
 -- 插入分类数据
 INSERT INTO `category` (`name`, `parent_id`, `level`, `icon`, `sort`)
-VALUES ('水果', 0, 1, '/icons/fruit.png', 1),
-       ('蔬菜', 0, 1, '/icons/vegetable.png', 2),
-       ('苹果', 1, 2, '/icons/apple.png', 11),
-       ('香蕉', 1, 2, '/icons/banana.png', 12),
-       ('叶菜类', 2, 2, '/icons/leafy.png', 21);
+-- 一级分类
+VALUES ('水果', 0, 1, '/icons/fruit.png', 0),
+       ('蔬菜', 0, 1, '/icons/vegetable.png', 1),
+       ('肉类', 0, 1, '/icons/meat.png', 2),
+       ('饮料', 0, 1, '/icons/drink.png', 3),
+       ('零食', 0, 1, '/icons/snack.png', 4),
+       ('乳制品', 0, 1, '/icons/dairy.png', 5),
+
+       -- 水果子分类
+       ('苹果', 1, 2, '/icons/apple.png', 0),
+       ('香蕉', 1, 2, '/icons/banana.png', 1),
+       ('柑橘类', 1, 2, '/icons/citrus.png', 2),
+       ('浆果类', 1, 2, '/icons/berry.png', 3),
+       ('热带水果', 1, 2, '/icons/tropical.png', 4),
+
+       -- 蔬菜子分类
+       ('叶菜类', 2, 2, '/icons/leafy.png', 0),
+       ('根茎类', 2, 2, '/icons/root.png', 1),
+       ('瓜果类', 2, 2, '/icons/gourd.png', 2),
+       ('菌菇类', 2, 2, '/icons/mushroom.png', 3),
+       ('豆类', 2, 2, '/icons/bean.png', 4),
+
+       -- 肉类的子分类
+       ('猪肉', 3, 2, '/icons/pork.png', 0),
+       ('牛肉', 3, 2, '/icons/beef.png', 1),
+       ('禽类', 3, 2, '/icons/poultry.png', 2),
+       ('海鲜', 3, 2, '/icons/seafood.png', 3),
+
+       -- 饮料的子分类
+       ('碳酸饮料', 4, 2, '/icons/soda.png', 0),
+       ('果汁', 4, 2, '/icons/juice.png', 1),
+       ('茶饮', 4, 2, '/icons/tea.png', 2),
+       ('咖啡', 4, 2, '/icons/coffee.png', 3),
+
+       -- 三级分类示例
+       ('富士苹果', 7, 3, '/icons/fuji.png', 0),
+       ('红提苹果', 7, 3, '/icons/red-delicious.png', 1),
+       ('青苹果', 7, 3, '/icons/green-apple.png', 2),
+       ('菠菜', 12, 3, '/icons/spinach.png', 0),
+       ('生菜', 12, 3, '/icons/lettuce.png', 1),
+       ('胡萝卜', 13, 3, '/icons/carrot.png', 0),
+       ('土豆', 13, 3, '/icons/potato.png', 1);
 
 -- 插入规格属性数据
 INSERT INTO `attribute` (`name`, `category_id`, `input_type`, `searchable`, `required`, `sort`)

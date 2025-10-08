@@ -1,5 +1,6 @@
 package com.xcg.serviceattribute.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.domain.attribute.dto.AttributeDto;
@@ -7,7 +8,6 @@ import com.xcg.freshcommon.domain.attribute.dto.AttributeValueDto;
 import com.xcg.freshcommon.domain.attribute.entity.Attribute;
 import com.xcg.freshcommon.domain.attribute.entity.AttributeValue;
 import com.xcg.freshcommon.domain.attribute.vo.AttributeVO;
-import com.xcg.freshcommon.domain.category.entity.Category;
 import com.xcg.freshcommon.domain.category.vo.CategoryVO;
 import com.xcg.freshcommon.feign.CategoryFeignClient;
 import com.xcg.serviceattribute.mapper.AttributeMapper;
@@ -42,7 +42,7 @@ public class AttributeServiceImpl extends ServiceImpl<AttributeMapper, Attribute
     private final StringRedisTemplate redisTemplate;
 
     @Override
-    public List<AttributeVO> listWithValue(long categoryId) {
+    public Result<List<AttributeVO>> listWithValue(long categoryId) {
         // 查询指定分类下状态为1的属性，并按排序字段升序排列
         List<Attribute> attributes = list(new LambdaQueryWrapper<Attribute>()
                 .eq(Attribute::getCategoryId, categoryId)
@@ -51,15 +51,18 @@ public class AttributeServiceImpl extends ServiceImpl<AttributeMapper, Attribute
         );
 
         // 将属性转换为VO并建立ID映射关系
-        Map<Long,AttributeVO> attributeMap = new HashMap<>();
+        Map<Long, AttributeVO> attributeMap = new HashMap<>();
 
         for (Attribute attribute : attributes) {
             AttributeVO vo = convertToVO(attribute);
-            attributeMap.put(attribute.getId(),vo);
+            attributeMap.put(attribute.getId(), vo);
         }
 
         // 批量查询所有属性对应的属性值
         Set<Long> list = attributes.stream().map(Attribute::getId).collect(Collectors.toSet());
+        if (list.isEmpty()) {
+            return Result.success(Collections.emptyList());
+        }
         List<AttributeValue> attributeValues = attributeValueMapper.selectList(new LambdaQueryWrapper<AttributeValue>()
                 .in(AttributeValue::getAttributeId, list)
                 .eq(AttributeValue::getStatus, 1)
@@ -72,7 +75,7 @@ public class AttributeServiceImpl extends ServiceImpl<AttributeMapper, Attribute
             AttributeVO vo = attributeMap.get(attributeId);
             List<AttributeVO.AttributeValueVO> values = vo.getValues();
 
-            if(values == null){
+            if (values == null) {
                 values = new ArrayList<>();
             }
             values.add(AttributeVO.AttributeValueVO.builder()
@@ -86,7 +89,9 @@ public class AttributeServiceImpl extends ServiceImpl<AttributeMapper, Attribute
         }
 
         // 按排序字段对结果进行排序并返回
-        return attributeMap.values().stream().sorted(Comparator.comparing(AttributeVO::getSort)).collect(Collectors.toList());
+        List<AttributeVO> collect = attributeMap.values().stream().sorted(Comparator.comparing(AttributeVO::getSort)).collect(Collectors.toList());
+
+        return Result.success(collect);
     }
 
 
@@ -113,17 +118,19 @@ public class AttributeServiceImpl extends ServiceImpl<AttributeMapper, Attribute
                 return Result.error("操作过于频繁，请稍后再试");
             }
 
-            Result<CategoryVO> categoryResult = categoryFeignClient.getById(categoryId);
-            CategoryVO byId = categoryResult.getData();
-            if(byId == null){
-                return Result.error("分类不存在或已禁用");
+            // 检查分类
+            Result<CategoryVO> categoryVOResult = categoryFeignClient.getById(categoryId);
+            if (!categoryVOResult.isSuccess()) {
+                return Result.error(categoryVOResult.getMessage());
             }
+            CategoryVO categoryVO = categoryVOResult.getData();
+            if (categoryVO.hasChildren()) {
+                return Result.error("只有叶子分类才能添加属性值");
+            }
+            // 检查分类下是否已存在属性
             List<Attribute> list = query().eq("category_id", categoryId).list();
-            if(list != null  && !list.isEmpty()){
+            if (list != null && !list.isEmpty()) {
                 return Result.error("该分类下已存在属性");
-            }
-            if(byId.getChildren() != null && byId.getChildren().isEmpty()){
-                return Result.error("只有叶子分类才能添加规格属性");
             }
 
             List<Attribute> attributes = new ArrayList<>();
@@ -157,7 +164,7 @@ public class AttributeServiceImpl extends ServiceImpl<AttributeMapper, Attribute
                         AttributeValue attributeValue = AttributeValue.builder()
                                 .attributeId(attribute.getId()) // 使用保存后生成的ID
                                 .value(valueDto.getValue())
-                                .extendedInfo(valueDto.getExtendedInfo())
+                                .extendedInfo(JSON.toJSONString(valueDto.getExtendedInfo()))
                                 .sort(j) // 从0开始排序
                                 .build();
                         allAttributeValues.add(attributeValue);
@@ -181,19 +188,18 @@ public class AttributeServiceImpl extends ServiceImpl<AttributeMapper, Attribute
     @Transactional(rollbackFor = Exception.class)
     public Result<Boolean> addValues(Long id, List<AttributeValueDto> attributeValueDtoList) {
         // 查询指定ID的属性
-        Attribute byId = query().eq("id",id).eq("status",1).one();
-        if(byId == null){
+        Attribute byId = query().eq("id", id).eq("status", 1).one();
+        if (byId == null) {
             return Result.error("属性不存在或已禁用");
         }
         // 检查分类状态
-        // 如果分类不存在或被禁用，则getById拿到的data是CategoryVO空对象
-        // 如果分类存在子分类，则getById拿到的data是CategoryVO，但CategoryVO.getChildren是EmptyList
-        Result<CategoryVO> categoryResult = categoryFeignClient.getById(byId.getCategoryId());
-        if (categoryResult == null || categoryResult.getData() == null) {
-            return Result.error("分类不存在或已禁用");
+        Result<CategoryVO> categoryVOResult = categoryFeignClient.getById(byId.getCategoryId());
+        if (!categoryVOResult.isSuccess()) {
+            return Result.error(categoryVOResult.getMessage());
         }
-        if(categoryResult.getData().getChildren() != null && categoryResult.getData().getChildren().isEmpty()){
-            return Result.error("只有叶子分类才能添加规格属性");
+        CategoryVO categoryVO = categoryVOResult.getData();
+        if (categoryVO.hasChildren()) {
+            return Result.error("只有叶子分类才能添加属性值");
         }
 
         Integer maxSort = attributeValueMapper.selectMaxSort(id);
@@ -202,7 +208,7 @@ public class AttributeServiceImpl extends ServiceImpl<AttributeMapper, Attribute
             AttributeValue attributeValue = AttributeValue.builder()
                     .attributeId(id)
                     .value(attributeValueDto.getValue())
-                    .extendedInfo(attributeValueDto.getExtendedInfo())
+                    .extendedInfo(JSON.toJSONString(attributeValueDto.getExtendedInfo()))
                     .sort(maxSort + 1)
                     .build();
             values.add(attributeValue);
@@ -211,5 +217,44 @@ public class AttributeServiceImpl extends ServiceImpl<AttributeMapper, Attribute
         attributeValueMapper.insertBatchSomeColumn(values);
 
         return Result.success(true);
+    }
+
+    @Override
+    public Result<List<Long>> getAttrIdsByCategoryId(Long categoryId) {
+        List<Long> list = query().eq("category_id", categoryId).eq("status", 1).list()
+                .stream()
+                .map(Attribute::getId)
+                .toList();
+        return Result.success(list);
+    }
+
+    @Override
+    public Result<Boolean> checkAttributeValueValid(Long attributeId, Long attributeValueId) {
+        AttributeValue byId = attributeValueMapper.selectById(attributeValueId);
+        if (byId == null) {
+            return Result.error("属性值不存在");
+        }
+        if (!attributeId.equals(byId.getAttributeId())) {
+            return Result.error("属性值ID=" + attributeValueId + "不属于属性ID=" + attributeId);
+        }
+        return Result.success(true);
+    }
+
+    @Override
+    public Result<String> getAttributeName(Long attributeId) {
+        Attribute byId = query().eq("id", attributeId).eq("status", 1).one();
+        if(byId == null){
+            return Result.error("属性不存在或已禁用");
+        }
+        return Result.success(byId.getName());
+    }
+
+    @Override
+    public Result<String> getAttributeValue(Long attributeValueId) {
+        AttributeValue byId = attributeValueMapper.selectById(attributeValueId);
+        if(byId == null){
+            return Result.error("属性值不存在");
+        }
+        return Result.success(byId.getValue());
     }
 }

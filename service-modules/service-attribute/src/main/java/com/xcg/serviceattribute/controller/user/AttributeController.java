@@ -8,11 +8,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,6 +32,28 @@ public class AttributeController {
     @GetMapping("/category/{categoryId}")
     @ApiOperation("获取规格属性列表")
     public Result<List<AttributeVO>> list(@PathVariable long categoryId){
-        return Result.success(attributeService.listWithValue(categoryId));
+        return attributeService.listWithValue(categoryId);
+    }
+
+    @GetMapping("/getAttrIds/{categoryId}")
+    public Result<List<Long>> getAttrIdsByCategoryId(@PathVariable("categoryId") Long categoryId){
+        return attributeService.getAttrIdsByCategoryId(categoryId);
+    }
+
+    @PostMapping("/checkAttributeValueValid")
+    public Result<Boolean> checkAttributeValueValid(
+            @RequestParam("attributeId") Long attributeId,
+            @RequestParam("attributeValueId") Long attributeValueId){
+        return attributeService.checkAttributeValueValid(attributeId, attributeValueId);
+    }
+
+    @GetMapping("/getAttributeName/{attributeId}")
+    public Result<String> getAttributeName(@PathVariable("attributeId") Long attributeId){
+        return attributeService.getAttributeName(attributeId);
+    }
+
+    @GetMapping("/getAttributeValue/{attributeValueId}")
+    public Result<String> getAttributeValue(@PathVariable("attributeValueId") Long attributeValueId){
+        return attributeService.getAttributeValue(attributeValueId);
     }
 }
