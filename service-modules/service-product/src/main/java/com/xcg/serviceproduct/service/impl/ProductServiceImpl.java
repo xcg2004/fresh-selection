@@ -476,4 +476,24 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         }
         return pageSize;
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result<Boolean> batchChangeStatus(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return Result.error("参数错误");
+        }
+        List<Product> products = productMapper.selectList(new LambdaQueryWrapper<Product>()
+                .in(Product::getId, productIds)
+        );
+
+        products.forEach(product -> {
+            product.setStatus(product.getStatus() == 1 ? 0 : 1);
+        });
+        boolean b = updateBatchById(products);
+        if(!b){
+            throw new BizException("批量修改商品状态失败");
+        }
+        return Result.success(true);
+    }
 }

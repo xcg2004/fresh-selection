@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.xcg.freshcommon.domain.product.vo.ProductScrollVO;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * <p>
@@ -22,4 +23,6 @@ public interface IProductService extends IService<Product> {
     Result<Long> createProduct(ProductDto productDto);
 
     Result<ScrollResultVO<ProductScrollVO>> scrollPage(Integer pageSize, Long lastId, LocalDateTime lastCreateTime);
+
+    Result<Boolean> batchChangeStatus(List<Long> productIds);
 }

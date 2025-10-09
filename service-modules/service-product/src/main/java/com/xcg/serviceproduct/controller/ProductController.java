@@ -71,5 +71,13 @@ public class ProductController {
         return productService.scrollPage(pageSize, lastId, lastCreateTime);
     }
 
+
+    @PutMapping("/batch-change/status")
+    @ApiOperation("批量修改商品状态")
+    public Result<Boolean> batchChangeStatus(@RequestBody List<Long> productIds) {
+        return productService.batchChangeStatus(productIds);
+    }
+
+
 }
 
