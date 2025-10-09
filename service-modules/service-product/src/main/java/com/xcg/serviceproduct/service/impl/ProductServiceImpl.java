@@ -3,9 +3,11 @@ package com.xcg.serviceproduct.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.xcg.freshcommon.core.exception.BizException;
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.category.vo.CategoryVO;
 import com.xcg.freshcommon.domain.product.dto.ProductDto;
 import com.xcg.freshcommon.domain.product.entity.Product;
+import com.xcg.freshcommon.domain.product.vo.ProductScrollVO;
 import com.xcg.freshcommon.domain.productSku.dto.ProductSkuDto;
 import com.xcg.freshcommon.domain.productSku.dto.ProductSkuDto.SkuSpec;
 import com.xcg.freshcommon.domain.productSku.entity.ProductSku;
@@ -13,12 +15,14 @@ import com.xcg.freshcommon.domain.skuSpecification.entity.SkuSpecification;
 //import com.xcg.freshcommon.feign.BrandFeignClient;
 import com.xcg.freshcommon.feign.AttributeFeignClient;
 import com.xcg.freshcommon.feign.CategoryFeignClient;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xcg.serviceproduct.mapper.ProductMapper;
 import com.xcg.serviceproduct.service.IProductService;
 import com.xcg.serviceproduct.service.IProductSkuService;
 import com.xcg.serviceproduct.service.ISkuSpecificationService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -41,11 +45,12 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements IProductService {
-
+    private final ProductMapper productMapper;
     private final CategoryFeignClient categoryFeignClient;
     private final AttributeFeignClient attributeFeignClient;
-//    private final BrandFeignClient brandFeignClient;
+    //    private final BrandFeignClient brandFeignClient;
     private final IProductSkuService productSkuService;
     private final ISkuSpecificationService skuSpecificationService;
 
@@ -144,19 +149,19 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
      * 创建商品实体
      */
     private Product createProductEntity(ProductDto productDto) {
-        return Product.builder()
-                .name(productDto.getName())
-                .categoryId(productDto.getCategoryId())
-                .brandId(productDto.getBrandId())
-                .mainImage(productDto.getMainImage())
-                .subImages(JSON.toJSONString(productDto.getSubImages()))
-                .detail(productDto.getDetail())
-                .description(productDto.getDescription())
-                .basePrice(productDto.getBasePrice())
-                .status(1) // 默认上架状态
-                .createTime(LocalDateTime.now())
-                .updateTime(LocalDateTime.now())
-                .build();
+        Product product = new Product();
+        product.setName(productDto.getName());
+        product.setCategoryId(productDto.getCategoryId());
+        product.setBrandId(productDto.getBrandId());
+        product.setMainImage(productDto.getMainImage());
+        product.setSubImages(JSON.toJSONString(productDto.getSubImages()));
+        product.setDetail(productDto.getDetail());
+        product.setDescription(productDto.getDescription());
+        product.setBasePrice(productDto.getBasePrice());
+        product.setStatus(1); // 默认上架状态
+        product.setCreateTime(LocalDateTime.now());
+        product.setUpdateTime(LocalDateTime.now());
+        return product;
     }
 
     /**
@@ -350,5 +355,125 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         if (!skuSpecifications.isEmpty() && !skuSpecificationService.saveBatch(skuSpecifications)) {
             throw new BizException("SKU规格关联保存失败");
         }
+    }
+
+    @Override
+    public Result<ScrollResultVO<ProductScrollVO>> scrollPage(Integer pageSize, Long lastId, LocalDateTime lastCreateTime) {
+        pageSize = checkPageSize(pageSize);
+        List<Product> products = productMapper.scrollPageByCursor(pageSize, lastId, lastCreateTime);
+
+        // 转换为VO对象
+        List<ProductScrollVO> productVOs = products.stream()
+                .map(this::convertToProductScrollVO)
+                .collect(Collectors.toList());
+
+        // 计算下次查询的游标
+        Long nextCursor = null;
+        if (!productVOs.isEmpty()) {
+            nextCursor = productVOs.get(productVOs.size() - 1).getId();
+        }
+
+        ScrollResultVO<ProductScrollVO> result = ScrollResultVO.of(productVOs, nextCursor, pageSize);
+        return Result.success(result);
+    }
+
+    /**
+     * 将Product实体转换为ProductScrollVO
+     *
+     * @param product 商品实体
+     * @return ProductScrollVO
+     */
+    private ProductScrollVO convertToProductScrollVO(Product product) {
+        ProductScrollVO productVO = new ProductScrollVO();
+        productVO.setId(product.getId());
+        productVO.setName(product.getName());
+        productVO.setCategoryId(product.getCategoryId());
+        productVO.setBrandId(product.getBrandId());
+        productVO.setMainImage(product.getMainImage());
+        productVO.setBasePrice(product.getBasePrice());
+        productVO.setStatus(product.getStatus());
+        productVO.setCreateTime(product.getCreateTime());
+
+        // 查询关联的SKU信息
+        LambdaQueryWrapper<ProductSku> skuQueryWrapper = new LambdaQueryWrapper<>();
+        skuQueryWrapper.eq(ProductSku::getProductId, product.getId())
+                .eq(ProductSku::getStatus, 1); // 只查询启用状态的SKU
+        List<ProductSku> productSkus = productSkuService.list(skuQueryWrapper);
+
+        // 转换SKU为VO
+        List<ProductScrollVO.ProductSkuVO> skuVOs = productSkus.stream()
+                .map(this::convertToProductSkuVO)
+                .collect(Collectors.toList());
+
+        productVO.setSkuList(skuVOs);
+        return productVO;
+    }
+
+    /**
+     * 将ProductSku实体转换为ProductScrollVO.ProductSkuVO
+     *
+     * @param productSku SKU实体
+     * @return ProductScrollVO.ProductSkuVO
+     */
+    private ProductScrollVO.ProductSkuVO convertToProductSkuVO(ProductSku productSku) {
+        ProductScrollVO.ProductSkuVO skuVO = new ProductScrollVO.ProductSkuVO();
+        skuVO.setId(productSku.getId());
+        skuVO.setPrice(productSku.getPrice());
+        skuVO.setOriginalPrice(productSku.getOriginalPrice());
+        skuVO.setStock(productSku.getStock());
+        skuVO.setWeight(productSku.getWeight());
+        skuVO.setImage(productSku.getImage());
+
+        // 查询规格信息
+        LambdaQueryWrapper<SkuSpecification> specQueryWrapper = new LambdaQueryWrapper<>();
+        specQueryWrapper.eq(SkuSpecification::getSkuId, productSku.getId());
+        List<SkuSpecification> skuSpecifications = skuSpecificationService.list(specQueryWrapper);
+
+        // 转换规格为VO
+        List<ProductScrollVO.SkuSpecVO> specVOs = skuSpecifications.stream()
+                .map(this::convertToSkuSpecVO)
+                .collect(Collectors.toList());
+
+        skuVO.setSpecList(specVOs);
+        return skuVO;
+    }
+
+    /**
+     * 将SkuSpecification实体转换为ProductScrollVO.SkuSpecVO
+     *
+     * @param skuSpecification 规格实体
+     * @return ProductScrollVO.SkuSpecVO
+     */
+    private ProductScrollVO.SkuSpecVO convertToSkuSpecVO(SkuSpecification skuSpecification) {
+        ProductScrollVO.SkuSpecVO specVO = new ProductScrollVO.SkuSpecVO();
+        specVO.setAttributeId(skuSpecification.getAttributeId());
+        specVO.setAttributeValueId(skuSpecification.getAttributeValueId());
+
+        // 获取属性和属性值名称
+        try {
+            Result<String> attrNameResult = attributeFeignClient.getAttributeName(skuSpecification.getAttributeId());
+            if (attrNameResult.isSuccess()) {
+                specVO.setAttributeName(attrNameResult.getData());
+            }
+
+            Result<String> attrValueResult = attributeFeignClient.getAttributeValue(skuSpecification.getAttributeValueId());
+            if (attrValueResult.isSuccess()) {
+                specVO.setAttributeValueName(attrValueResult.getData());
+            }
+        } catch (Exception e) {
+            log.warn("获取属性或属性值名称失败: {}", e.getMessage());
+        }
+
+        return specVO;
+    }
+
+    private Integer checkPageSize(Integer pageSize) {
+        if (pageSize == null || pageSize <= 0) {
+            return 10;
+        }
+        if (pageSize > 100) {
+            return 100;
+        }
+        return pageSize;
     }
 }

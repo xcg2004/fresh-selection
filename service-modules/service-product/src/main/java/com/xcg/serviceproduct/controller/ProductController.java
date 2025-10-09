@@ -3,8 +3,10 @@ package com.xcg.serviceproduct.controller;
 
 
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.product.dto.ProductDto;
 import com.xcg.freshcommon.domain.product.entity.Product;
+import com.xcg.freshcommon.domain.product.vo.ProductScrollVO;
 import com.xcg.serviceproduct.service.IProductService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -14,8 +16,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -36,11 +45,7 @@ public class ProductController {
     private final IProductService productService;
 
     private final RabbitTemplate rabbitTemplate;
-    @GetMapping("/list")
-    public Result<List<Product>> list() {
-        return Result.success(productService.list());
-//        throw new BizException(500,"异常");
-    }
+
 
     @PostMapping("/send-message")
     public Result<String> sendMessage() {
@@ -55,4 +60,16 @@ public class ProductController {
         return productService.createProduct(productDto);
     }
 
+    @GetMapping("/scroll/page")
+    @ApiOperation("分页查询商品")
+    public Result<ScrollResultVO<ProductScrollVO>> scrollPage(
+            @RequestParam(required = false) Integer pageSize,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime lastCreateTime)
+    {
+        log.info("分页查询商品： size={} lastId={} lastCreateTime={}", pageSize, lastId, lastCreateTime);
+        return productService.scrollPage(pageSize, lastId, lastCreateTime);
+    }
+
 }
+
