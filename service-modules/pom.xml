@@ -20,6 +20,7 @@
         <module>service-payment</module>
         <module>service-category</module>
         <module>service-attribute</module>
+        <module>service-cart</module>
     </modules>
 
     <!-- 关键配置：聚合项目必须使用pom打包方式 -->

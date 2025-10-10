@@ -1,11 +1,12 @@
 package com.xcg.serviceproduct.controller;
 
 
-
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
+import com.xcg.freshcommon.domain.cart.vo.CartVO;
 import com.xcg.freshcommon.domain.product.dto.ProductDto;
 import com.xcg.freshcommon.domain.product.entity.Product;
+import com.xcg.freshcommon.domain.product.vo.ProductInfoVO;
 import com.xcg.freshcommon.domain.product.vo.ProductScrollVO;
 import com.xcg.serviceproduct.service.IProductService;
 import io.swagger.annotations.Api;
@@ -65,8 +66,7 @@ public class ProductController {
     public Result<ScrollResultVO<ProductScrollVO>> scrollPage(
             @RequestParam(required = false) Integer pageSize,
             @RequestParam(required = false) Long lastId,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime lastCreateTime)
-    {
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime lastCreateTime) {
         log.info("分页查询商品： size={} lastId={} lastCreateTime={}", pageSize, lastId, lastCreateTime);
         return productService.scrollPage(pageSize, lastId, lastCreateTime);
     }
@@ -78,6 +78,30 @@ public class ProductController {
         return productService.batchChangeStatus(productIds);
     }
 
+    @GetMapping("/check/status-with-stock/{skuId}")
+    @ApiOperation("检查商品状态及库存")
+    public Result<Boolean> checkStatusWithStock(@PathVariable Long skuId,
+                                                @RequestParam("quantity") Integer quantity) {
+        log.info("检查商品状态及库存： skuId={} quantity={}", skuId, quantity);
+        return productService.checkStatusWithStock(skuId, quantity);
+    }
 
+    @GetMapping("/info/{productId}")
+    @ApiOperation("查询商品信息")
+    public Result<ProductScrollVO> getProductInfo(@PathVariable Long productId) {
+        return productService.getProductInfo(productId);
+    }
+
+    @PostMapping("/fill-other-fields")
+    @ApiOperation("填充其他字段")
+    public Result<CartVO> fillOtherFields(@RequestBody CartVO cartVO){
+        return productService.fillOtherFields(cartVO);
+    }
+
+    @GetMapping("/{skuId}")
+    @ApiOperation("查询商品信息")
+    public Result<Product> getProductBySkuId(@PathVariable Long skuId) {
+        return productService.getProductBySkuId(skuId);
+    }
 }
 

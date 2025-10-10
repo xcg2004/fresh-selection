@@ -2,9 +2,11 @@ package com.xcg.serviceproduct.service;
 
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
+import com.xcg.freshcommon.domain.cart.vo.CartVO;
 import com.xcg.freshcommon.domain.product.dto.ProductDto;
 import com.xcg.freshcommon.domain.product.entity.Product;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xcg.freshcommon.domain.product.vo.ProductInfoVO;
 import com.xcg.freshcommon.domain.product.vo.ProductScrollVO;
 
 import java.time.LocalDateTime;
@@ -25,4 +27,12 @@ public interface IProductService extends IService<Product> {
     Result<ScrollResultVO<ProductScrollVO>> scrollPage(Integer pageSize, Long lastId, LocalDateTime lastCreateTime);
 
     Result<Boolean> batchChangeStatus(List<Long> productIds);
+
+    Result<Boolean> checkStatusWithStock(Long skuId, Integer quantity);
+
+    Result<ProductScrollVO> getProductInfo(Long productId);
+
+    Result<CartVO> fillOtherFields(CartVO cartVO);
+
+    Result<Product> getProductBySkuId(Long skuId);
 }

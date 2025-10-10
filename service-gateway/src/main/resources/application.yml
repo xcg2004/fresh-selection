@@ -39,6 +39,10 @@ spring:
           uri: lb://service-attribute
           predicates:
               - Path=/api/attribute/**
+        - id: cart-service
+          uri: lb://service-cart
+          predicates:
+              - Path=/api/cart/**
   data:
     redis:
       host: 127.0.0.1

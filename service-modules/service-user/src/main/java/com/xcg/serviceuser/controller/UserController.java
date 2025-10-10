@@ -1,7 +1,8 @@
 package com.xcg.serviceuser.controller;
 
-import com.xcg.freshcommon.core.utils.JwtUtil;
+
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.core.utils.UserHolder;
 import com.xcg.freshcommon.domain.user.dto.UserLoginDto;
 import com.xcg.freshcommon.domain.user.dto.UserRegisterDto;
 import com.xcg.freshcommon.domain.user.vo.UserVO;
@@ -12,7 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
+
 import org.springframework.web.bind.annotation.*;
 
 
@@ -23,9 +24,9 @@ import org.springframework.web.bind.annotation.*;
 @Api(tags = "用户模块")
 public class UserController {
 
-    private final JwtUtil jwtUtil;
-    private final StringRedisTemplate redisTemplate;
     private final IUserService userService;
+
+    private final UserHolder userHolder;
 
 //    @GetMapping("/token")
 //    public Result<String> getToken() {
@@ -52,19 +53,18 @@ public class UserController {
 
     @GetMapping("/info")
     @ApiOperation("获取用户信息")
-    public Result<UserVO> info(HttpServletRequest request) {
-        String userId = request.getHeader("X-User-ID");
-
+    public Result<UserVO> info() {
+        Long userId = userHolder.getUserId();
         log.info("获取用户id：{}的详细信息", userId);
-        return userService.getInfoById(Long.valueOf(userId));
+        return userService.getInfoById(userId);
     }
 
     @PostMapping("/logout")
     @ApiOperation("用户登出")
     public Result<String> logout(HttpServletRequest request) {
-        String userId = request.getHeader("X-User-ID");
+        Long userId = userHolder.getUserId();
         log.info("用户:{}登出", userId);
-        return userService.logout(Long.valueOf(userId));
+        return userService.logout(userId);
     }
 
 

@@ -4,9 +4,11 @@ import com.alibaba.fastjson.JSON;
 import com.xcg.freshcommon.core.exception.BizException;
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
+import com.xcg.freshcommon.domain.cart.vo.CartVO;
 import com.xcg.freshcommon.domain.category.vo.CategoryVO;
 import com.xcg.freshcommon.domain.product.dto.ProductDto;
 import com.xcg.freshcommon.domain.product.entity.Product;
+import com.xcg.freshcommon.domain.product.vo.ProductInfoVO;
 import com.xcg.freshcommon.domain.product.vo.ProductScrollVO;
 import com.xcg.freshcommon.domain.productSku.dto.ProductSkuDto;
 import com.xcg.freshcommon.domain.productSku.dto.ProductSkuDto.SkuSpec;
@@ -495,5 +497,84 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
             throw new BizException("批量修改商品状态失败");
         }
         return Result.success(true);
+    }
+
+    @Override
+    public Result<Boolean> checkStatusWithStock(Long skuId, Integer quantity) {
+        if (quantity <= 0) {
+            return Result.error("购买数量必须大于0");
+        }
+        ProductSku productSku = productSkuService.getOne(new LambdaQueryWrapper<ProductSku>()
+                .eq(ProductSku::getId, skuId)
+                .eq(ProductSku::getStatus, 1)
+        );
+        if(productSku == null){
+            return Result.error("商品Sku不存在");
+        }
+        if(productSku.getStock() - productSku.getLockStock() < quantity){
+            return Result.error("商品库存不足");
+        }
+        // 校验product状态
+        Product product = productMapper.selectOne(new LambdaQueryWrapper<Product>()
+                .eq(Product::getId, productSku.getProductId())
+                .eq(Product::getStatus, 1)
+        );
+        if(product == null){
+            return Result.error("商品不存在或已下架");
+        }
+        return Result.success(true);
+    }
+
+    @Override
+    public Result<ProductScrollVO> getProductInfo(Long productId) {
+        Product product = productMapper.selectOne(new LambdaQueryWrapper<Product>()
+                .eq(Product::getId, productId)
+                .eq(Product::getStatus, 1)
+        );
+        if(product == null){
+            return Result.error("商品不存在或已下架");
+        }
+        ProductScrollVO productScrollVO = convertToProductScrollVO(product);
+        return Result.success(productScrollVO);
+    }
+
+    @Override
+    public Result<CartVO> fillOtherFields(CartVO cartVO) {
+        Long skuId = cartVO.getSkuId();
+        ProductSku productSku = productSkuService.getOne(new LambdaQueryWrapper<ProductSku>()
+                .eq(ProductSku::getId, skuId)
+                .eq(ProductSku::getStatus, 1)
+        );
+        //1.productId
+        cartVO.setProductId(productSku.getProductId());
+        //2.price、originalPrice...
+        cartVO.setPrice(productSku.getPrice());
+        cartVO.setOriginalPrice(productSku.getOriginalPrice());
+        cartVO.setStock(productSku.getStock());
+        cartVO.setImage(productSku.getImage());
+        cartVO.setStatus(productSku.getStatus());
+        cartVO.setSpecsText(productSku.getSpecsText());
+        //3.productName
+        LambdaQueryWrapper<Product> queryWrapper = new LambdaQueryWrapper<Product>()
+                .eq(Product::getId, productSku.getProductId())
+                .eq(Product::getStatus, 1);
+        Product product = getOne(queryWrapper);
+        cartVO.setProductName(product.getName());
+        //4.specList
+        List<SkuSpecification> skuSpecifications = skuSpecificationService.list(new LambdaQueryWrapper<SkuSpecification>()
+                .eq(SkuSpecification::getSkuId, skuId)
+        );
+        List<ProductScrollVO.SkuSpecVO> specVOList = skuSpecifications.stream().map(this::convertToSkuSpecVO).toList();
+        cartVO.setSpecList(specVOList);
+        return Result.success(cartVO);
+    }
+
+    @Override
+    public Result<Product> getProductBySkuId(Long skuId) {
+        Product product = productMapper.selectProductBySkuId(skuId);
+        if (product == null) {
+            return Result.error("未找到对应的商品信息");
+        }
+        return Result.success(product);
     }
 }

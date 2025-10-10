@@ -17,4 +17,6 @@ import java.util.List;
 public interface ProductMapper extends BaseMapper<Product> {
 
     List<Product> scrollPageByCursor(Integer pageSize, Long lastId, LocalDateTime lastCreateTime);
+
+    Product selectProductBySkuId(Long skuId);
 }

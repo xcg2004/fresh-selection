@@ -7,13 +7,20 @@
         <where>
             status = 1
             <if test="lastId != null">
-                and id > #{lastId}
+                and id &lt; #{lastId}
             </if>
             <if test="lastCreateTime != null">
-                and create_time > #{lastCreateTime}
+                and create_time &lt; #{lastCreateTime}
             </if>
         </where>
         order by id, create_time desc
         limit #{pageSize}
+    </select>
+    <select id="selectProductBySkuId" resultType="com.xcg.freshcommon.domain.product.entity.Product"
+            parameterType="java.lang.Long">
+        select * from product p
+        inner join product_sku ps on p.id = ps.product_id
+        where ps.id = #{skuId} and ps.status = 1 and p.status = 1
+
     </select>
 </mapper>
