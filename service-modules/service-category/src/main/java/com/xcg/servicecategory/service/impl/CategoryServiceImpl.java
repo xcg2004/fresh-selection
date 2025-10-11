@@ -202,7 +202,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
             log.info("分类基本信息更新成功: ID={}, Name={}", dto.getId(), dto.getName());
         }
 
-        return Result.success(updated);
+        return Result.success(true);
     }
 
     @Override

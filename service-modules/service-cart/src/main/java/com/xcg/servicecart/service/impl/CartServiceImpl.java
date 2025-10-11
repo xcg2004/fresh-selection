@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * <p>
@@ -94,6 +95,10 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
 
         if (quantity < 1) {
             throw new BizException("数量不能小于1");
+        }
+
+        if(Objects.equals(byId.getQuantity(), quantity)){
+            return Result.success(true);
         }
 
         Long skuId = byId.getSkuId();
@@ -208,6 +213,10 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
     public Result<Boolean> updateSpec(Long cartId, Long skuId) {
         //1.校验是否是当前用户的cart
         Cart byId = checkCartBelongUser(cartId);
+
+        if(Objects.equals(byId.getSkuId(), skuId)){
+            return Result.success(true);
+        }
 
         //2.校验skuId是否与购物车中的skuId属于同一product
         Result<Product> currentCartProduct = productFeignClient.getProductBySkuId(byId.getSkuId());
