@@ -135,6 +135,20 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理RuntimeException
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException e) {
+        log.error("运行时异常: ", e);
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 500);
+        result.put("message", "服务器内部异常");
+        result.put("success", false);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+    }
+
+
+    /**
      * 处理其他未捕获的异常
      */
     @ExceptionHandler(Exception.class)
