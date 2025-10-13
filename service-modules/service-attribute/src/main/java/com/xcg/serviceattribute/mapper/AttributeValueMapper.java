@@ -1,6 +1,6 @@
 package com.xcg.serviceattribute.mapper;
 
-import com.xcg.freshcommon.domain.attribute.entity.AttributeValue;
+import com.xcg.freshcommon.domain.attributeValue.entity.AttributeValue;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import java.util.List;

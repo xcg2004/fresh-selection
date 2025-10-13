@@ -1,4 +1,4 @@
-package com.xcg.freshcommon.domain.attribute.entity;
+package com.xcg.freshcommon.domain.attributeValue.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;

@@ -2,7 +2,7 @@ package com.xcg.serviceattribute.service;
 
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.domain.attribute.dto.AttributeDto;
-import com.xcg.freshcommon.domain.attribute.dto.AttributeValueDto;
+import com.xcg.freshcommon.domain.attributeValue.dto.AttributeValueDto;
 import com.xcg.freshcommon.domain.attribute.entity.Attribute;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xcg.freshcommon.domain.attribute.vo.AttributeVO;

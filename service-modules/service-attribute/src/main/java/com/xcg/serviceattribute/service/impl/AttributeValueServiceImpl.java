@@ -1,6 +1,6 @@
 package com.xcg.serviceattribute.service.impl;
 
-import com.xcg.freshcommon.domain.attribute.entity.AttributeValue;
+import com.xcg.freshcommon.domain.attributeValue.entity.AttributeValue;
 import com.xcg.serviceattribute.mapper.AttributeValueMapper;
 import com.xcg.serviceattribute.service.IAttributeValueService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

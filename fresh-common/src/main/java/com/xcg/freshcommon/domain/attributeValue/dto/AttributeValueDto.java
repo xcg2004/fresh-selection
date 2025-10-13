@@ -1,4 +1,4 @@
-package com.xcg.freshcommon.domain.attribute.dto;
+package com.xcg.freshcommon.domain.attributeValue.dto;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;

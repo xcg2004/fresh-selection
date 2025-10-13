@@ -3,7 +3,7 @@ package com.xcg.serviceattribute.controller.admin;
 
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.domain.attribute.dto.AttributeDto;
-import com.xcg.freshcommon.domain.attribute.dto.AttributeValueDto;
+import com.xcg.freshcommon.domain.attributeValue.dto.AttributeValueDto;
 import com.xcg.serviceattribute.service.IAttributeService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

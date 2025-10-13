@@ -1,5 +1,6 @@
 package com.xcg.freshcommon.domain.attribute.dto;
 
+import com.xcg.freshcommon.domain.attributeValue.dto.AttributeValueDto;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
