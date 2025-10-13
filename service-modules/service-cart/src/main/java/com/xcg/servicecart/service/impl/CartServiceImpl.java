@@ -1,5 +1,6 @@
 package com.xcg.servicecart.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xcg.freshcommon.core.exception.BizException;
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
@@ -42,7 +43,7 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
         Long userId = userHolder.getUserId();
 
         // 简单快速的库存检查（非强一致性）
-        Result<Boolean> quickCheckResult = productFeignClient.checkStatusWithStock(skuId, quantity);
+        Result<Boolean> quickCheckResult = productFeignClient.checkStatusWithStock(skuId, quantity, false);
         if (!quickCheckResult.isSuccess()) {
             throw new BizException(quickCheckResult.getMessage());
         }
@@ -102,7 +103,7 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
         }
 
         Long skuId = byId.getSkuId();
-        Result<Boolean> checkStatusWithStock = productFeignClient.checkStatusWithStock(skuId, quantity);
+        Result<Boolean> checkStatusWithStock = productFeignClient.checkStatusWithStock(skuId, quantity, false);
         if (!checkStatusWithStock.isSuccess()) {
             throw new BizException(checkStatusWithStock.getMessage());
         }
@@ -239,5 +240,20 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
             throw new BizException("更新失败");
         }
         return Result.success(true);
+    }
+
+    @Override
+    public Result<Boolean> check(Long cartId, Long skuId, Integer quantity) {
+        LambdaQueryWrapper<Cart> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper
+                .eq(Cart::getId, cartId)
+                .eq(Cart::getSkuId, skuId)
+                .eq(Cart::getUserId, userHolder.getUserId())
+                .eq(Cart::getQuantity, quantity);
+        Cart cart = getOne(queryWrapper);
+        if(cart != null){
+            return Result.success(true);
+        }
+        return Result.error("购物车信息有误");
     }
 }

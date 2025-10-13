@@ -6,6 +6,8 @@ import com.xcg.freshcommon.domain.order.dto.OrderCreateDto;
 import com.xcg.freshcommon.enums.PayType;
 import com.xcg.serviceorder.service.IOrdersService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,19 +32,21 @@ public class OrdersController {
 
     private final IOrdersService ordersService;
 
-    /** todo
-     * - [ ] 从购物车生成订单 `POST /api/orders/create`
-     * - [ ] 订单列表查询 `GET /api/orders`
-     * - [ ] 订单详情查询 `GET /api/orders/{id}`
-     */
+    @PostMapping("/create")
+    @ApiOperation("创建订单")
+    public Result<Long> create(@RequestBody @Valid List<OrderCreateDto> orderCreateDto,
+                               @RequestParam @NotNull Long addressId,
+                               @RequestParam(required = false,defaultValue = "WECHAT") PayType payType) {
+        log.info("创建订单: {} {} {}", orderCreateDto, addressId, payType);
+        return ordersService.create(orderCreateDto, addressId, payType);
+    }
 
-
-//    @PostMapping("/create")
-//    public Result<Long> create(@RequestBody List<OrderCreateDto> orderCreateDto,
-//                               @RequestParam @NotNull Long addressId,
-//                               @RequestParam(required = false,defaultValue = "1") PayType payType) {
-//        log.info("创建订单: {} {} {}", orderCreateDto, addressId, payType);
-//        return ordersService.create(orderCreateDto, addressId, payType);
-//    }
+    //测试seata分布式事务
+    @PostMapping("/test")
+    @ApiOperation("测试seata")
+    public Result<Boolean> test() {
+        log.info("测试");
+        return ordersService.test();
+    }
 
 }

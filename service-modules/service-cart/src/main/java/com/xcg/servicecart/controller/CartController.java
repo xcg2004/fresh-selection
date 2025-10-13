@@ -89,4 +89,12 @@ public class CartController {
         log.info("更换购物车规格：cartId={}, skuId={}", cartId, skuId);
         return cartService.updateSpec(cartId, skuId);
     }
+
+
+    @GetMapping("/check/{cartId}")
+    Result<Boolean> check(@PathVariable Long cartId,
+                          @RequestParam("skuId") Long skuId,
+                          @RequestParam("quantity") Integer quantity){
+        return cartService.check(cartId, skuId, quantity);
+    }
 }

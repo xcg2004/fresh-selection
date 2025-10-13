@@ -3,10 +3,14 @@ package com.xcg.freshcommon.fallback;
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.domain.cart.vo.CartVO;
 import com.xcg.freshcommon.domain.product.entity.Product;
+import com.xcg.freshcommon.domain.productSku.entity.ProductSku;
 import com.xcg.freshcommon.feign.ProductFeignClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -15,8 +19,8 @@ public class ProductFeignClientFallbackFactory implements FallbackFactory<Produc
     public ProductFeignClient create(Throwable cause) {
         return new ProductFeignClient() {
             @Override
-            public Result<Boolean> checkStatusWithStock(Long skuId, Integer quantity) {
-                log.error("校验状态及库存失败： {} {}", skuId, quantity, cause);
+            public Result<Boolean> checkStatusWithStock(Long skuId, Integer quantity,Boolean strictStockCheck) {
+                log.error("校验状态及库存失败： {} {} {}", skuId, quantity,strictStockCheck, cause);
                 return Result.error("商品服务暂时不可用");
             }
 
@@ -31,6 +35,25 @@ public class ProductFeignClientFallbackFactory implements FallbackFactory<Produc
                 log.error("查询商品信息失败：{}", skuId, cause);
                 return Result.error("商品服务暂时不可用");
             }
+
+            @Override
+            public Result<List<ProductSku>> deductStock(Map<Long, Integer> skuIdAndQuantity) {
+                log.error("扣减库存失败：{}", skuIdAndQuantity, cause);
+                return Result.error("商品服务暂时不可用");
+            }
+
+            @Override
+            public Result<Boolean> batchCheckStatusWithStock(Map<Long, Integer> skuIdAndQuantity) {
+                log.error("批量校验状态及库存失败：{}", skuIdAndQuantity, cause);
+                return Result.error("商品服务暂时不可用");
+            }
+
+            @Override
+            public Result<Boolean> recoverStock(Map<Long, Integer> skuIdAndQuantity) {
+                log.error("恢复库存失败：{}", skuIdAndQuantity, cause);
+                return Result.error("商品服务暂时不可用");
+            }
+
         };
     }
 }

@@ -4,10 +4,12 @@ package com.xcg.serviceproduct.controller;
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.cart.vo.CartVO;
+import com.xcg.freshcommon.domain.order.dto.OrderCreateDto;
 import com.xcg.freshcommon.domain.product.dto.ProductDto;
 import com.xcg.freshcommon.domain.product.entity.Product;
 import com.xcg.freshcommon.domain.product.vo.ProductInfoVO;
 import com.xcg.freshcommon.domain.product.vo.ProductScrollVO;
+import com.xcg.freshcommon.domain.productSku.entity.ProductSku;
 import com.xcg.serviceproduct.service.IProductService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -81,9 +84,10 @@ public class ProductController {
     @GetMapping("/check/status-with-stock/{skuId}")
     @ApiOperation("检查商品状态及库存")
     public Result<Boolean> checkStatusWithStock(@PathVariable Long skuId,
-                                                @RequestParam("quantity") Integer quantity) {
-        log.info("检查商品状态及库存： skuId={} quantity={}", skuId, quantity);
-        return productService.checkStatusWithStock(skuId, quantity);
+                                                @RequestParam("quantity") Integer quantity,
+                                                @RequestParam("strictStockCheck") Boolean strictStockCheck) {
+        log.info("检查商品状态及库存： skuId={} quantity={} strictCheck={}", skuId, quantity, strictStockCheck);
+        return productService.checkStatusWithStock(skuId, quantity, strictStockCheck);
     }
 
     @GetMapping("/info/{productId}")
@@ -94,7 +98,7 @@ public class ProductController {
 
     @PostMapping("/fill-other-fields")
     @ApiOperation("填充其他字段")
-    public Result<CartVO> fillOtherFields(@RequestBody CartVO cartVO){
+    public Result<CartVO> fillOtherFields(@RequestBody CartVO cartVO) {
         return productService.fillOtherFields(cartVO);
     }
 
@@ -102,6 +106,22 @@ public class ProductController {
     @ApiOperation("查询商品信息")
     public Result<Product> getProductBySkuId(@PathVariable Long skuId) {
         return productService.getProductBySkuId(skuId);
+    }
+
+    @PutMapping("/deduct")
+    public Result<List<ProductSku>> deductStock(@RequestBody Map<Long, Integer> skuIdAndQuantity){
+        return productService.deductStock(skuIdAndQuantity);
+    }
+
+    @PostMapping("/batch/check-status-with-stock")
+    @ApiOperation("批量检查商品状态及库存")
+    public Result<Boolean> batchCheckStatusWithStock(@RequestBody Map<Long,Integer> skuIdAndQuantity){
+        return productService.batchCheckStatusWithStock(skuIdAndQuantity);
+    }
+
+    @PutMapping("/recover")
+    Result<Boolean> recoverStock(@RequestBody Map<Long, Integer> skuIdAndQuantity){
+        return productService.recoverStock(skuIdAndQuantity);
     }
 }
 

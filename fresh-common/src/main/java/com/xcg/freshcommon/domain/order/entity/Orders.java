@@ -64,8 +64,10 @@ public class Orders implements Serializable {
     @ApiModelProperty(value = "订单备注")
     private String remark;
 
+    @ApiModelProperty(value = "创建时间")
     private LocalDateTime createTime;
 
+    @ApiModelProperty(value = "更新时间")
     private LocalDateTime updateTime;
 
     @ApiModelProperty(value = "支付时间")

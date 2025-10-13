@@ -6,6 +6,7 @@ import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.cart.vo.CartVO;
 import com.xcg.freshcommon.domain.category.vo.CategoryVO;
+import com.xcg.freshcommon.domain.order.dto.OrderCreateDto;
 import com.xcg.freshcommon.domain.product.dto.ProductDto;
 import com.xcg.freshcommon.domain.product.entity.Product;
 import com.xcg.freshcommon.domain.product.vo.ProductInfoVO;
@@ -31,10 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -493,37 +491,60 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
             product.setStatus(product.getStatus() == 1 ? 0 : 1);
         });
         boolean b = updateBatchById(products);
-        if(!b){
+        if (!b) {
             throw new BizException("批量修改商品状态失败");
         }
         return Result.success(true);
     }
 
+    /**
+     * 检查商品状态和库存
+     *
+     * @param skuId            SKU ID
+     * @param quantity         数量
+     * @param strictStockCheck 是否严格检查库存（true-下单用，false-加购用）
+     */
     @Override
-    public Result<Boolean> checkStatusWithStock(Long skuId, Integer quantity) {
+    public Result<Boolean> checkStatusWithStock(Long skuId, Integer quantity, Boolean strictStockCheck) {
         if (quantity <= 0) {
             return Result.error("购买数量必须大于0");
         }
+
         ProductSku productSku = productSkuService.getOne(new LambdaQueryWrapper<ProductSku>()
                 .eq(ProductSku::getId, skuId)
                 .eq(ProductSku::getStatus, 1)
         );
-        if(productSku == null){
-            return Result.error("商品Sku不存在");
+
+        if (productSku == null) {
+            return Result.error("商品SKU不存在或已下架");
         }
-        if(productSku.getStock() - productSku.getLockStock() < quantity){
-            return Result.error("商品库存不足");
+
+        // 库存检查策略
+        if (strictStockCheck) {
+            // 下单用：检查实际库存
+            if (productSku.getStock() < quantity) {
+                return Result.error("商品库存不足");
+            }
+        } else {
+            // 加购用：只检查是否有库存(可选)
+//            if (productSku.getStock() <= 0) {
+//                return Result.error("商品已售罄");
+//            }
         }
-        // 校验product状态
+
+        // 校验商品状态
         Product product = productMapper.selectOne(new LambdaQueryWrapper<Product>()
                 .eq(Product::getId, productSku.getProductId())
                 .eq(Product::getStatus, 1)
         );
-        if(product == null){
+
+        if (product == null) {
             return Result.error("商品不存在或已下架");
         }
+
         return Result.success(true);
     }
+
 
     @Override
     public Result<ProductScrollVO> getProductInfo(Long productId) {
@@ -531,7 +552,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
                 .eq(Product::getId, productId)
                 .eq(Product::getStatus, 1)
         );
-        if(product == null){
+        if (product == null) {
             return Result.error("商品不存在或已下架");
         }
         ProductScrollVO productScrollVO = convertToProductScrollVO(product);
@@ -576,5 +597,61 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
             return Result.error("未找到对应的商品信息");
         }
         return Result.success(product);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result<List<ProductSku>> deductStock(Map<Long, Integer> skuIdAndQuantity) {
+        if (skuIdAndQuantity.isEmpty()) {
+            return Result.success(Collections.emptyList());
+        }
+
+        List<ProductSku> productSkus = productSkuService.list(new LambdaQueryWrapper<ProductSku>()
+                .in(ProductSku::getId, skuIdAndQuantity.keySet())
+        );
+        productSkus.forEach(productSku -> {
+            Integer stock = productSku.getStock();
+            if (stock - 1 <= 0) {
+                throw new BizException("商品库存不足");
+            }
+            productSku.setStock(stock - 1);
+            productSku.setLockStock(productSku.getLockStock() + 1);
+
+        });
+        productSkuService.updateBatchById(productSkus);
+        return Result.success(productSkus);
+    }
+
+    @Override
+    public Result<Boolean> batchCheckStatusWithStock(Map<Long, Integer> skuIdAndQuantity) {
+        List<ProductSku> productSkus = productSkuService.list(new LambdaQueryWrapper<ProductSku>()
+                .in(ProductSku::getId, skuIdAndQuantity.keySet())
+        );
+        for (ProductSku productSku : productSkus) {
+            if (productSku.getStock() < skuIdAndQuantity.get(productSku.getId())) {
+                return Result.error("商品库存不足");
+            }
+            if (productSku.getStatus() != 1) {
+                return Result.error("商品已下架");
+            }
+        }
+
+        return Result.success(true);
+    }
+
+    @Override
+    public Result<Boolean> recoverStock(Map<Long, Integer> skuIdAndQuantity) {
+        if (skuIdAndQuantity.isEmpty()) {
+            return Result.success(true);
+        }
+        List<ProductSku> productSkus = productSkuService.list(new LambdaQueryWrapper<ProductSku>()
+                .in(ProductSku::getId, skuIdAndQuantity.keySet())
+        );
+        productSkus.forEach(productSku -> {
+            productSku.setStock(productSku.getStock() + skuIdAndQuantity.get(productSku.getId()));
+            productSku.setLockStock(productSku.getLockStock() - skuIdAndQuantity.get(productSku.getId()));
+        });
+        productSkuService.updateBatchById(productSkus);
+        return Result.success(true);
     }
 }

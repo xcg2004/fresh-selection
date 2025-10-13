@@ -32,4 +32,6 @@ public interface ICartService extends IService<Cart> {
     Result<ScrollResultVO<CartVO>> scrollPage(Integer pageSize, Long lastId, LocalDateTime lastCreateTime);
 
     Result<Boolean> updateSpec(Long cartId, Long skuId);
+
+    Result<Boolean> check(Long cartId, Long skuId, Integer quantity);
 }
