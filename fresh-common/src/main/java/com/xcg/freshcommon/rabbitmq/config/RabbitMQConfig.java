@@ -1,9 +1,6 @@
 package com.xcg.freshcommon.rabbitmq.config;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -12,6 +9,9 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableRabbit
@@ -26,6 +26,10 @@ public class RabbitMQConfig {
         connectionFactory.setUsername("tjxt");
         connectionFactory.setPassword("123321");
         connectionFactory.setVirtualHost("/tjxt");
+        // 开启发布确认
+        connectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
+        // 开启发布返回
+        connectionFactory.setPublisherReturns(true);
         return connectionFactory;
     }
 
@@ -34,21 +38,25 @@ public class RabbitMQConfig {
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(new Jackson2JsonMessageConverter());
+
+        // 设置发布确认回调
+        rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
+            if (ack) {
+                System.out.println("消息发送成功: " + correlationData);
+            } else {
+                System.err.println("消息发送失败: " + cause);
+            }
+        });
+
+        // 设置发布返回回调
+        rabbitTemplate.setReturnsCallback(returned -> {
+            System.err.println("消息被退回: " + returned);
+        });
+
+        // 设置消息发送模式为持久化
+        rabbitTemplate.setMandatory(true);
         return rabbitTemplate;
     }
 
-    @Bean
-    public Queue myQueue() {
-        return new Queue("my.queue", true);
-    }
 
-    @Bean
-    public TopicExchange myExchange() {
-        return new TopicExchange("my.exchange");
-    }
-
-    @Bean
-    public Binding binding(Queue myQueue, TopicExchange myExchange) {
-        return BindingBuilder.bind(myQueue).to(myExchange).with("my.routing.key");
-    }
 }
