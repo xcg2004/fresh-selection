@@ -48,23 +48,19 @@ public class CategoryController {
 
     @PostMapping("/create")
     @ApiOperation("创建分类")
-    public Result<Long> create(@RequestBody CategoryDto categoryDto) {
+    public Result<Long> create(@RequestBody @Valid CategoryDto categoryDto) {
         return categoryService.create(categoryDto);
     }
 
-    /**
-     * 更新分类基本信息
-     */
     @PostMapping("/update-basic")
+    @ApiOperation("更新分类基本信息")
     public Result<Boolean> updateBasic(@RequestBody @Valid CategoryBasicUpdateDto dto) {
         log.info("更新分类基本信息: {}", dto);
         return categoryService.updateBasic(dto);
     }
 
-    /**
-     * 移动分类位置
-     */
     @PostMapping("/move")
+    @ApiOperation("移动分类位置")
     public Result<Boolean> moveCategory(@RequestBody @Valid CategoryMoveRequest request) {
         log.info("移动分类位置: {}", request);
         return categoryService.moveCategory(request);

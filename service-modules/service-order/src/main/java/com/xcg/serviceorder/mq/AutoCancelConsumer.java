@@ -65,8 +65,8 @@ public class AutoCancelConsumer {
             }
 
             // 检查订单状态
-            if (orders.getStatus() != 0) {
-                log.info("订单状态不是待付款，无需取消，订单ID: {}, 状态: {}", orderId, orders.getStatus());
+            if (orders.getStatus().getCode() != 0) {
+                log.info("订单状态不是待付款，无需取消，订单ID: {}, 状态: {}", orderId, orders.getStatus().getMessage());
                 redisTemplate.delete(retryKey);
                 channel.basicAck(deliveryTag, false);
                 return;

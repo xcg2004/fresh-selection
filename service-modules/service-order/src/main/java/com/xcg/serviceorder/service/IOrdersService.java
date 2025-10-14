@@ -1,9 +1,12 @@
 package com.xcg.serviceorder.service;
 
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.core.utils.ScrollQueryParam;
+import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.order.dto.OrderCreateDto;
 import com.xcg.freshcommon.domain.order.entity.Orders;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xcg.freshcommon.domain.order.vo.OrderVO;
 import com.xcg.freshcommon.enums.PayType;
 
 import java.util.List;
@@ -20,5 +23,7 @@ public interface IOrdersService extends IService<Orders> {
 
     Result<Long> create(List<OrderCreateDto> orderCreateDto, Long addressId, PayType payType);
 
-    Result<Boolean> test();
+    Result<OrderVO> selectById(Long orderId);
+
+    Result<ScrollResultVO<OrderVO>> scrollPage(ScrollQueryParam scrollQueryParam);
 }

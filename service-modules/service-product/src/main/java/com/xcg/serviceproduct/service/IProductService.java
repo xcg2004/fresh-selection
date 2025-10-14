@@ -1,6 +1,7 @@
 package com.xcg.serviceproduct.service;
 
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.core.utils.ScrollQueryParam;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.cart.vo.CartVO;
 
@@ -27,7 +28,7 @@ public interface IProductService extends IService<Product> {
 
     Result<Long> createProduct(ProductDto productDto);
 
-    Result<ScrollResultVO<ProductScrollVO>> scrollPage(Integer pageSize, Long lastId, LocalDateTime lastCreateTime);
+    Result<ScrollResultVO<ProductScrollVO>> scrollPage(ScrollQueryParam scrollQueryParam);
 
     Result<Boolean> batchChangeStatus(List<Long> productIds);
 

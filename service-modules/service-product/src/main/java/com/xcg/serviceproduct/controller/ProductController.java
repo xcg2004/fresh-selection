@@ -2,6 +2,7 @@ package com.xcg.serviceproduct.controller;
 
 
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.core.utils.ScrollQueryParam;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.cart.vo.CartVO;
 import com.xcg.freshcommon.domain.order.dto.OrderCreateDto;
@@ -48,16 +49,6 @@ public class ProductController {
 
     private final IProductService productService;
 
-    private final RabbitTemplate rabbitTemplate;
-
-
-    @PostMapping("/send-message")
-    public Result<String> sendMessage() {
-        Message message = MessageBuilder.withBody("hello world".getBytes()).build();
-        rabbitTemplate.send("my.exchange", "my.routing.key", message);
-        return Result.success("发送成功");
-    }
-
     @PostMapping("/create")
     @ApiOperation("创建商品")
     public Result<Long> createProduct(@RequestBody @Valid ProductDto productDto) {
@@ -66,12 +57,10 @@ public class ProductController {
 
     @GetMapping("/scroll/page")
     @ApiOperation("分页查询商品")
-    public Result<ScrollResultVO<ProductScrollVO>> scrollPage(
-            @RequestParam(required = false) Integer pageSize,
-            @RequestParam(required = false) Long lastId,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime lastCreateTime) {
-        log.info("分页查询商品： size={} lastId={} lastCreateTime={}", pageSize, lastId, lastCreateTime);
-        return productService.scrollPage(pageSize, lastId, lastCreateTime);
+    public Result<ScrollResultVO<ProductScrollVO>> scrollPage(@Valid ScrollQueryParam scrollQueryParam) {
+        log.info("分页查询商品： size={} lastId={} lastCreateTime={}", scrollQueryParam.getPageSize(),
+                scrollQueryParam.getLastId(), scrollQueryParam.getLastCreateTime());
+        return productService.scrollPage(scrollQueryParam);
     }
 
 
@@ -109,18 +98,20 @@ public class ProductController {
     }
 
     @PutMapping("/deduct")
-    public Result<List<ProductSku>> deductStock(@RequestBody Map<Long, Integer> skuIdAndQuantity){
+    @ApiOperation("扣减库存")
+    public Result<List<ProductSku>> deductStock(@RequestBody Map<Long, Integer> skuIdAndQuantity) {
         return productService.deductStock(skuIdAndQuantity);
     }
 
     @PostMapping("/batch/check-status-with-stock")
     @ApiOperation("批量检查商品状态及库存")
-    public Result<Boolean> batchCheckStatusWithStock(@RequestBody Map<Long,Integer> skuIdAndQuantity){
+    public Result<Boolean> batchCheckStatusWithStock(@RequestBody Map<Long, Integer> skuIdAndQuantity) {
         return productService.batchCheckStatusWithStock(skuIdAndQuantity);
     }
 
     @PutMapping("/recover")
-    Result<Boolean> recoverStock(@RequestBody Map<Long, Integer> skuIdAndQuantity){
+    @ApiOperation("恢复库存")
+    public Result<Boolean> recoverStock(@RequestBody Map<Long, Integer> skuIdAndQuantity) {
         return productService.recoverStock(skuIdAndQuantity);
     }
 }

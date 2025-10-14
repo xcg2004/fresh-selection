@@ -26,8 +26,6 @@ public interface ICategoryService extends IService<Category> {
 
     Result<Long> create(CategoryDto categoryDto);
 
-//    Result<Boolean> updateInfo(CategoryUpdateDto categoryUpdateDto);
-
     Result<Boolean> updateSwap(Long firstId, Long secondId);
 
     Result<Boolean> updateBasic(CategoryBasicUpdateDto dto);

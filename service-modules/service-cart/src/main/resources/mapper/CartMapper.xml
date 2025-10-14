@@ -5,15 +5,16 @@
     <select id="scrollPage" resultType="com.xcg.freshcommon.domain.cart.entity.Cart">
         select * from cart
         <where>
+            user_id = #{userId}
             <if test="lastId != null">
-                id &lt; #{lastId}
+                and id &lt; #{lastId}
             </if>
             <if test="lastCreateTime != null">
                 and create_time &lt; #{lastCreateTime}
             </if>
 
         </where>
-        order by id, create_time desc
+        order by create_time desc, id desc
         limit #{pageSize}
     </select>
 </mapper>

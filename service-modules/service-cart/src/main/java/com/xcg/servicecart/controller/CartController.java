@@ -2,11 +2,13 @@ package com.xcg.servicecart.controller;
 
 
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.core.utils.ScrollQueryParam;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.cart.vo.CartVO;
 import com.xcg.servicecart.service.ICartService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,13 +75,11 @@ public class CartController {
 
     @GetMapping("/scroll/page")
     @ApiOperation("分页查询购物车")
-    public Result<ScrollResultVO<CartVO>> scrollPage(
-        @RequestParam(required = false) Integer pageSize,
-        @RequestParam(required = false) Long lastId,
-        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime lastCreateTime)
+    public Result<ScrollResultVO<CartVO>> scrollPage(@Valid ScrollQueryParam scrollQueryParam)
     {
-        log.info("分页查询购物车： size={} lastId={} lastCreateTime={}", pageSize, lastId, lastCreateTime);
-        return cartService.scrollPage(pageSize, lastId, lastCreateTime);
+        log.info("分页查询购物车： size={} lastId={} lastCreateTime={}", scrollQueryParam.getPageSize(),
+                scrollQueryParam.getLastId(), scrollQueryParam.getLastCreateTime());
+        return cartService.scrollPage(scrollQueryParam);
     }
 
     @PutMapping("/update/spec/{cartId}")
@@ -92,6 +92,7 @@ public class CartController {
 
 
     @GetMapping("/check/{cartId}")
+    @ApiOperation("校验购物车")
     Result<Boolean> check(@PathVariable Long cartId,
                           @RequestParam("skuId") Long skuId,
                           @RequestParam("quantity") Integer quantity){

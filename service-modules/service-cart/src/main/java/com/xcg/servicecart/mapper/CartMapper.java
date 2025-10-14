@@ -16,5 +16,5 @@ import java.util.List;
  */
 public interface CartMapper extends BaseMapper<Cart> {
 
-    List<Cart> scrollPage(Integer pageSize, Long lastId, LocalDateTime lastCreateTime);
+    List<Cart> scrollPage(Integer pageSize, Long lastId, LocalDateTime lastCreateTime, Long userId);
 }

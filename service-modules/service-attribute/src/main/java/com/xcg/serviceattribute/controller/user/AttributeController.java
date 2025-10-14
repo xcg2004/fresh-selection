@@ -36,11 +36,13 @@ public class AttributeController {
     }
 
     @GetMapping("/getAttrIds/{categoryId}")
+    @ApiOperation("获取分类下的规格属性ID列表")
     public Result<List<Long>> getAttrIdsByCategoryId(@PathVariable("categoryId") Long categoryId){
         return attributeService.getAttrIdsByCategoryId(categoryId);
     }
 
     @PostMapping("/checkAttributeValueValid")
+    @ApiOperation("检查规格属性值是否有效")
     public Result<Boolean> checkAttributeValueValid(
             @RequestParam("attributeId") Long attributeId,
             @RequestParam("attributeValueId") Long attributeValueId){
@@ -48,11 +50,13 @@ public class AttributeController {
     }
 
     @GetMapping("/getAttributeName/{attributeId}")
+    @ApiOperation("获取规格属性名称")
     public Result<String> getAttributeName(@PathVariable("attributeId") Long attributeId){
         return attributeService.getAttributeName(attributeId);
     }
 
     @GetMapping("/getAttributeValue/{attributeValueId}")
+    @ApiOperation("获取规格属性值名称")
     public Result<String> getAttributeValue(@PathVariable("attributeValueId") Long attributeValueId){
         return attributeService.getAttributeValue(attributeValueId);
     }

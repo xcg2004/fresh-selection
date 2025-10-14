@@ -3,6 +3,7 @@ package com.xcg.servicecart.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xcg.freshcommon.core.exception.BizException;
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.core.utils.ScrollQueryParam;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.core.utils.UserHolder;
 import com.xcg.freshcommon.domain.cart.entity.Cart;
@@ -98,7 +99,7 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
             throw new BizException("数量不能小于1");
         }
 
-        if(Objects.equals(byId.getQuantity(), quantity)){
+        if (Objects.equals(byId.getQuantity(), quantity)) {
             return Result.success(true);
         }
 
@@ -164,12 +165,15 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
     }
 
     @Override
-    public Result<ScrollResultVO<CartVO>> scrollPage(Integer pageSize, Long lastId, LocalDateTime lastCreateTime) {
-        //1. 分页参数检查
-        pageSize = checkPageSize(pageSize);
-        //2. 分页查询(完成部分参数的构建)
-        List<Cart> cartList = cartMapper.scrollPage(pageSize, lastId, lastCreateTime);
-        //3. 构建VO
+    public Result<ScrollResultVO<CartVO>> scrollPage(ScrollQueryParam scrollQueryParam) {
+        //1.获取用户id
+        Long userId = userHolder.getUserId();
+        //2. 分页参数检查
+        Integer pageSize = scrollQueryParam.getValidPageSize();
+        //3. 分页查询(完成部分参数的构建)
+        List<Cart> cartList = cartMapper.scrollPage(pageSize,
+                scrollQueryParam.getLastId(), scrollQueryParam.getLastCreateTime(),userId);
+        //4. 构建VO
         List<CartVO> cartVOS = cartList.stream().map(this::convertToCartVO).toList();
 
         // 计算下次查询的游标
@@ -177,18 +181,12 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
         if (!cartVOS.isEmpty()) {
             nextCursor = cartVOS.get(cartVOS.size() - 1).getId();
         }
-
-        return Result.success(ScrollResultVO.of(cartVOS, nextCursor, pageSize));
-    }
-
-    private Integer checkPageSize(Integer pageSize) {
-        if (pageSize == null || pageSize <= 0) {
-            return 10;
+        LocalDateTime nextCursorTime = null;
+        if (!cartVOS.isEmpty()) {
+            nextCursorTime = cartVOS.get(cartVOS.size() - 1).getCreateTime();
         }
-        if (pageSize > 100) {
-            return 100;
-        }
-        return pageSize;
+
+        return Result.success(ScrollResultVO.of(cartVOS, nextCursor, nextCursorTime, pageSize));
     }
 
     private CartVO convertToCartVO(Cart cart) {
@@ -215,28 +213,28 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
         //1.校验是否是当前用户的cart
         Cart byId = checkCartBelongUser(cartId);
 
-        if(Objects.equals(byId.getSkuId(), skuId)){
+        if (Objects.equals(byId.getSkuId(), skuId)) {
             return Result.success(true);
         }
 
         //2.校验skuId是否与购物车中的skuId属于同一product
         Result<Product> currentCartProduct = productFeignClient.getProductBySkuId(byId.getSkuId());
-        if(!currentCartProduct.isSuccess()){
+        if (!currentCartProduct.isSuccess()) {
             return Result.error(currentCartProduct.getMessage());
         }
 
         Result<Product> targetProduct = productFeignClient.getProductBySkuId(skuId);
-        if(!targetProduct.isSuccess()){
+        if (!targetProduct.isSuccess()) {
             return Result.error(targetProduct.getMessage());
         }
 
-        if(!currentCartProduct.getData().getId().equals(targetProduct.getData().getId())){
+        if (!currentCartProduct.getData().getId().equals(targetProduct.getData().getId())) {
             return Result.error("请选择正确的商品");
         }
 
         byId.setSkuId(skuId);
         boolean update = updateById(byId);
-        if(!update){
+        if (!update) {
             throw new BizException("更新失败");
         }
         return Result.success(true);
@@ -251,7 +249,7 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
                 .eq(Cart::getUserId, userHolder.getUserId())
                 .eq(Cart::getQuantity, quantity);
         Cart cart = getOne(queryWrapper);
-        if(cart != null){
+        if (cart != null) {
             return Result.success(true);
         }
         return Result.error("购物车信息有误");

@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -145,6 +146,20 @@ public class GlobalExceptionHandler {
         result.put("message", "服务器内部异常");
         result.put("success", false);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+    }
+
+    /**
+     * 处理HttpMessageNotReadableException
+     */
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        log.error("参数解析异常: ", e);
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 400);
+        result.put("message", "参数解析错误");
+        result.put("success", false);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
     }
 
 

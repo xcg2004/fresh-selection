@@ -7,6 +7,7 @@ import com.xcg.freshcommon.domain.attributeValue.dto.AttributeValueDto;
 import com.xcg.serviceattribute.service.IAttributeService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -33,7 +34,7 @@ public class AttributeController {
     @PostMapping("/create-with-values/{categoryId}")
     @ApiOperation("创建属性并添加初始属性值")
     public Result<Boolean> createWithValues(@PathVariable long categoryId,
-                                            @RequestBody List<AttributeDto> attributeDto) {
+                                            @RequestBody @Valid List<AttributeDto> attributeDto) {
         log.info("创建属性并添加初始属性值:{} {}", categoryId, attributeDto);
         return attributeService.createWithValues(categoryId, attributeDto);
     }

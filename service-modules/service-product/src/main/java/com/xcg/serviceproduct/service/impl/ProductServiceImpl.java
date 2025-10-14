@@ -3,6 +3,7 @@ package com.xcg.serviceproduct.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.xcg.freshcommon.core.exception.BizException;
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.core.utils.ScrollQueryParam;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.cart.vo.CartVO;
 import com.xcg.freshcommon.domain.category.vo.CategoryVO;
@@ -358,9 +359,10 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     }
 
     @Override
-    public Result<ScrollResultVO<ProductScrollVO>> scrollPage(Integer pageSize, Long lastId, LocalDateTime lastCreateTime) {
-        pageSize = checkPageSize(pageSize);
-        List<Product> products = productMapper.scrollPageByCursor(pageSize, lastId, lastCreateTime);
+    public Result<ScrollResultVO<ProductScrollVO>> scrollPage(ScrollQueryParam scrollQueryParam) {
+        Integer pageSize = scrollQueryParam.getValidPageSize();
+        List<Product> products = productMapper.scrollPageByCursor(pageSize,
+                scrollQueryParam.getLastId(), scrollQueryParam.getLastCreateTime());
 
         // 转换为VO对象
         List<ProductScrollVO> productVOs = products.stream()
@@ -373,7 +375,12 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
             nextCursor = productVOs.get(productVOs.size() - 1).getId();
         }
 
-        ScrollResultVO<ProductScrollVO> result = ScrollResultVO.of(productVOs, nextCursor, pageSize);
+        LocalDateTime nextCursorTime = null;
+        if (!productVOs.isEmpty()) {
+            nextCursorTime = productVOs.get(productVOs.size() - 1).getCreateTime();
+        }
+
+        ScrollResultVO<ProductScrollVO> result = ScrollResultVO.of(productVOs, nextCursor,nextCursorTime, pageSize);
         return Result.success(result);
     }
 

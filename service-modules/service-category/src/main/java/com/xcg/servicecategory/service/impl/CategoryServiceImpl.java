@@ -122,6 +122,17 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         if (categoryDto.getName() == null || categoryDto.getName().trim().isEmpty()) {
             throw new BizException(400, "分类名称不能为空");
         }
+        if(categoryDto.getName().length() > 100) {
+            throw new BizException(400, "分类名称长度不能超过100个字符");
+        }
+        // 可以校验防止SQL注入
+        if(categoryDto.getName().contains("&") || categoryDto.getName().contains(";")){
+            throw new BizException(400, "分类名称不能包含特殊字符");
+        }
+
+        if(categoryDto.getIcon() != null && categoryDto.getIcon().length() > 500) {
+            throw new BizException(400, "图标长度不能超过500个字符");
+        }
 
         Long parentId = categoryDto.getParentId();
         Category category = Category.builder().build();
@@ -150,7 +161,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         }
 
         // 2.设置基础属性
-        category.setName(categoryDto.getName().trim());
+        category.setName(categoryDto.getName());
         category.setIcon(categoryDto.getIcon());
 
         // status和created_time等字段依赖数据库默认值
@@ -161,16 +172,18 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     }
 
     private Integer getMaxSortByParentId(Long parentId) {
-        Category maxSortCategory = getOne(new LambdaQueryWrapper<Category>()
-                .select(Category::getSort)
+        List<Category> maxSortCategory = list(new LambdaQueryWrapper<Category>()
                 .eq(Category::getParentId, parentId)
-                .eq(Category::getStatus, 1)  // 只统计有效分类
+                .eq(Category::getStatus, 1)
                 .orderByDesc(Category::getSort)
-                .last("LIMIT 1"));
+                .orderByDesc(Category::getId)
+                .last("LIMIT 1")
+        );
 
         // 如果没有找到记录，说明这是第一个子分类，应该返回-1，这样+1后就是0
-        return maxSortCategory == null ? -1 : maxSortCategory.getSort();
+        return maxSortCategory == null || maxSortCategory.isEmpty() ? -1 : (maxSortCategory.get(0).getSort() == null ? -1 : maxSortCategory.get(0).getSort());
     }
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)

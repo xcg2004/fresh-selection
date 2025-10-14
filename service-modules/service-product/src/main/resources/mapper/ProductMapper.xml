@@ -13,7 +13,7 @@
                 and create_time &lt; #{lastCreateTime}
             </if>
         </where>
-        order by id, create_time desc
+        order by create_time desc, id desc
         limit #{pageSize}
     </select>
     <select id="selectProductBySkuId" resultType="com.xcg.freshcommon.domain.product.entity.Product"

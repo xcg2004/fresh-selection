@@ -110,6 +110,15 @@ public class AttributeServiceImpl extends ServiceImpl<AttributeMapper, Attribute
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result<Boolean> createWithValues(long categoryId, List<AttributeDto> attributeDtoList) {
+        for (AttributeDto dto : attributeDtoList) {
+            if (dto.getValues() == null || dto.getValues().isEmpty()) {
+                return Result.error("请填写属性值");
+            }
+            if (dto.getValues().size() > 20) {
+                return Result.error("属性值不能超过20个");
+            }
+        }
+
         // 使用分布式锁防止并发创建
         String lockKey = "attribute:lock:" + categoryId;
         try {
