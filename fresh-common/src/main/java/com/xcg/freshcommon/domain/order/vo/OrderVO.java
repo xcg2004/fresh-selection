@@ -1,45 +1,33 @@
-package com.xcg.freshcommon.domain.order.entity;
+package com.xcg.freshcommon.domain.order.vo;
 
-import java.math.BigDecimal;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import java.time.LocalDateTime;
-import java.io.Serializable;
-
+import com.xcg.freshcommon.domain.orderItem.vo.OrderItemVO;
+import com.xcg.freshcommon.domain.userAddress.vo.UserAddressVO;
 import com.xcg.freshcommon.enums.OrderStatus;
 import com.xcg.freshcommon.enums.PayType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
+import lombok.NoArgsConstructor;
 
-/**
- * <p>
- * 订单表
- * </p>
- *
- * @author xcg2004
- * @since 2025-10-11
- */
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@TableName("orders")
-@ApiModel(value="Orders对象", description="订单表")
-public class Orders implements Serializable {
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@ApiModel("订单VO")
+public class OrderVO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
-    @TableId(value = "id", type = IdType.AUTO)
+    @ApiModelProperty(value = "订单ID")
     private Long id;
 
     @ApiModelProperty(value = "订单号")
     private String orderNo;
-
-    @ApiModelProperty(value = "用户ID")
-    private Long userId;
 
     @ApiModelProperty(value = "订单总金额")
     private BigDecimal totalAmount;
@@ -47,20 +35,17 @@ public class Orders implements Serializable {
     @ApiModelProperty(value = "实付金额")
     private BigDecimal payAmount;
 
-    @ApiModelProperty(value = "运费")
-    private BigDecimal freightAmount;
-
     @ApiModelProperty(value = "优惠金额")
     private BigDecimal discountAmount;
+
+    @ApiModelProperty(value = "运费")
+    private BigDecimal freightAmount;
 
     @ApiModelProperty(value = "支付方式：1-微信，2-支付宝")
     private PayType paymentType;
 
     @ApiModelProperty(value = "订单状态：0-待付款，1-待发货，2-已发货，3-已完成，4-已关闭")
     private OrderStatus status;
-
-    @ApiModelProperty(value = "收货地址ID")
-    private Long addressId;
 
     @ApiModelProperty(value = "订单备注")
     private String remark;
@@ -80,5 +65,10 @@ public class Orders implements Serializable {
     @ApiModelProperty(value = "确认收货时间")
     private LocalDateTime confirmTime;
 
+    @ApiModelProperty(value = "订单项列表")
+    private List<OrderItemVO> orderItemVOList;
+
+    @ApiModelProperty(value = "收货地址VO")
+    private UserAddressVO userAddressVO;
 
 }

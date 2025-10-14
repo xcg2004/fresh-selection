@@ -2,4 +2,21 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.xcg.serviceorder.mapper.OrdersMapper">
 
+    <select id="scrollPage" resultType="com.xcg.freshcommon.domain.order.entity.Orders">
+        select * from orders
+        <where>
+            user_id = #{userId}
+
+            <if test="lastId != null">
+                and id &lt; #{lastId}
+            </if>
+
+            <if test="lastCreateTime != null">
+                and create_time &lt; #{lastCreateTime}
+            </if>
+
+        </where>
+        order by create_time desc,id desc
+        limit #{pageSize}
+    </select>
 </mapper>

@@ -2,7 +2,10 @@ package com.xcg.serviceorder.controller;
 
 
 import com.xcg.freshcommon.core.utils.Result;
+import com.xcg.freshcommon.core.utils.ScrollQueryParam;
+import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.order.dto.OrderCreateDto;
+import com.xcg.freshcommon.domain.order.vo.OrderVO;
 import com.xcg.freshcommon.enums.PayType;
 import com.xcg.serviceorder.service.IOrdersService;
 import io.swagger.annotations.Api;
@@ -41,12 +44,18 @@ public class OrdersController {
         return ordersService.create(orderCreateDto, addressId, payType);
     }
 
-    //测试seata分布式事务
-    @PostMapping("/test")
-    @ApiOperation("测试seata")
-    public Result<Boolean> test() {
-        log.info("测试");
-        return ordersService.test();
+    @GetMapping("/{orderId}")
+    @ApiOperation("查询订单")
+    public Result<OrderVO> get(@PathVariable @NotNull Long orderId) {
+        log.info("查询订单: {}", orderId);
+        return ordersService.selectById(orderId);
+    }
+
+    @GetMapping("/scroll/page")
+    @ApiOperation("滚动分页查询订单")
+    public Result<ScrollResultVO<OrderVO>> scrollPage(@Valid ScrollQueryParam scrollQueryParam) {
+        log.info("滚动分页查询订单: {}", scrollQueryParam);
+        return ordersService.scrollPage(scrollQueryParam);
     }
 
 }

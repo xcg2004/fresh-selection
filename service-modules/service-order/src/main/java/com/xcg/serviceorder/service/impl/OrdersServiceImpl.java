@@ -1,14 +1,15 @@
 package com.xcg.serviceorder.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.rabbitmq.client.Address;
 import com.xcg.freshcommon.core.exception.BizException;
 import com.xcg.freshcommon.core.properties.OrderDelayProperties;
-import com.xcg.freshcommon.core.utils.RedisIdGenerator;
-import com.xcg.freshcommon.core.utils.Result;
-import com.xcg.freshcommon.core.utils.UserHolder;
+import com.xcg.freshcommon.core.utils.*;
 import com.xcg.freshcommon.domain.order.dto.OrderCreateDto;
 import com.xcg.freshcommon.domain.order.entity.Orders;
+import com.xcg.freshcommon.domain.order.vo.OrderVO;
 import com.xcg.freshcommon.domain.orderItem.entity.OrderItem;
+import com.xcg.freshcommon.domain.orderItem.vo.OrderItemVO;
 import com.xcg.freshcommon.domain.product.entity.Product;
 import com.xcg.freshcommon.domain.productSku.entity.ProductSku;
 import com.xcg.freshcommon.domain.userAddress.vo.UserAddressVO;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -201,20 +203,119 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
     }
 
     @Override
-    @GlobalTransactional(rollbackFor = Exception.class)
-    public Result<Boolean> test() {
-        Orders order = new Orders();
-        order.setOrderNo("test");
-        order.setUserId(userHolder.getUserId());
-        order.setTotalAmount(new BigDecimal("100"));
-        order.setPayAmount(new BigDecimal("100"));
-        order.setFreightAmount(new BigDecimal("10"));
-        order.setDiscountAmount(new BigDecimal("0"));
-        order.setAddressId(1L);
-        save(order);
+    public Result<OrderVO> selectById(Long orderId) {
+        //1. 获取用户id
+        Long userId = userHolder.getUserId();
 
-        productFeignClient.deductStock(Map.of(1L, 1));
+        //2. 查询订单
+        Orders orders = getOne(new LambdaQueryWrapper<Orders>()
+                .eq(Orders::getId,orderId)
+                .eq(Orders::getUserId,userId)
+        );
+        if(orders == null) {
+            return Result.error("订单不存在");
+        }
 
-        return Result.success(true);
+        OrderVO orderVO = convertToVO(orders);
+
+        //3. 查询订单项,构建订单项ListVO
+        List<OrderItem> orderItemList = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
+                .eq(OrderItem::getOrderId, orderId)
+        );
+        List<OrderItemVO> orderItemVOList = orderItemList.stream()
+                .map(this::convertOrderItemToVO).toList();
+        orderVO.setOrderItemVOList(orderItemVOList);
+
+        //4. 查询收货地址,构建订单收货地址VO
+        Result<UserAddressVO> userAddressVOResult = userFeignClient.get(orders.getAddressId());
+        if(!userAddressVOResult.isSuccess()) {
+            return Result.error(userAddressVOResult.getMessage());
+        }
+        orderVO.setUserAddressVO(userAddressVOResult.getData());
+
+        //5. 返回VO
+        return Result.success(orderVO);
+    }
+
+    private OrderVO convertToVO(Orders orders) {
+        OrderVO orderVO = new OrderVO();
+
+        orderVO.setId(orders.getId());
+        orderVO.setOrderNo(orders.getOrderNo());
+        orderVO.setTotalAmount(orders.getTotalAmount());
+        orderVO.setPayAmount(orders.getPayAmount());
+        orderVO.setFreightAmount(orders.getFreightAmount());
+        orderVO.setDiscountAmount(orders.getDiscountAmount());
+        orderVO.setPaymentType(orders.getPaymentType());
+        orderVO.setStatus(orders.getStatus());
+        orderVO.setRemark(orders.getRemark());
+        orderVO.setCreateTime(orders.getCreateTime());
+        orderVO.setUpdateTime(orders.getUpdateTime());
+        orderVO.setPayTime(orders.getPayTime());
+        orderVO.setShipTime(orders.getShipTime());
+        orderVO.setConfirmTime(orders.getConfirmTime());
+
+        return orderVO;
+    }
+
+    private OrderItemVO convertOrderItemToVO(OrderItem orderItem) {
+        return OrderItemVO.builder()
+                .id(orderItem.getId())
+                .orderId(orderItem.getOrderId())
+                .skuId(orderItem.getSkuId())
+                .productName(orderItem.getProductName())
+                .skuSpec(orderItem.getSkuSpecsText())
+                .skuImage(orderItem.getSkuImage())
+                .price(orderItem.getPrice())
+                .quantity(orderItem.getQuantity())
+                .totalPrice(orderItem.getTotalPrice())
+                .createTime(orderItem.getCreateTime())
+                .build();
+    }
+
+    @Override
+    public Result<ScrollResultVO<OrderVO>> scrollPage(ScrollQueryParam scrollQueryParam) {
+        //1. 获取用户id
+        Long userId = userHolder.getUserId();
+        //2. 分页查询
+        Integer pageSize = scrollQueryParam.getValidPageSize();
+        List<Orders> ordersPage = ordersMapper.scrollPage(pageSize,
+                scrollQueryParam.getLastId(), scrollQueryParam.getLastCreateTime(), userId);
+
+        //3.构建orderId -> userAddressVO的Map
+        Map<Long, UserAddressVO> userAddressVOMap = new HashMap<>();
+
+        for (Orders orders : ordersPage) {
+            Long addressId = orders.getAddressId();
+            Result<UserAddressVO> userAddressVOResult = userFeignClient.get(addressId);
+            if(!userAddressVOResult.isSuccess()) {
+                return Result.error(userAddressVOResult.getMessage());
+            }
+            userAddressVOMap.computeIfAbsent(addressId, k -> userAddressVOResult.getData());
+        }
+
+        //4. 转成VO
+        List<OrderVO> orderVOList = ordersPage.stream().map(this::convertToVO).toList();
+
+        //5. 获取订单项
+        for (OrderVO orderVO : orderVOList) {
+            List<OrderItem> orderItemList = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
+                    .eq(OrderItem::getOrderId, orderVO.getId()));
+            orderVO.setOrderItemVOList(orderItemList.stream().map(this::convertOrderItemToVO).toList());
+            orderVO.setUserAddressVO(userAddressVOMap.getOrDefault(orderVO.getId(), null));
+        }
+
+        //6. 计算下次查询的游标
+        Long nextCursor = null;
+        if (!orderVOList.isEmpty()) {
+            nextCursor = orderVOList.get(orderVOList.size() - 1).getId();
+        }
+        LocalDateTime nextCursorTime = null;
+        if (!orderVOList.isEmpty()) {
+            nextCursorTime = orderVOList.get(orderVOList.size() - 1).getCreateTime();
+        }
+
+        //7. 返回结果
+        return Result.success(ScrollResultVO.of(orderVOList, nextCursor, nextCursorTime, pageSize));
     }
 }
