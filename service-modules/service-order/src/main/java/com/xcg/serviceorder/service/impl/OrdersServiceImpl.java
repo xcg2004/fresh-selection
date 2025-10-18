@@ -13,6 +13,7 @@ import com.xcg.freshcommon.domain.orderItem.vo.OrderItemVO;
 import com.xcg.freshcommon.domain.product.entity.Product;
 import com.xcg.freshcommon.domain.productSku.entity.ProductSku;
 import com.xcg.freshcommon.domain.userAddress.vo.UserAddressVO;
+import com.xcg.freshcommon.enums.OrderStatus;
 import com.xcg.freshcommon.enums.PayType;
 import com.xcg.freshcommon.feign.CartFeignClient;
 import com.xcg.freshcommon.feign.ProductFeignClient;
@@ -291,7 +292,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             if(!userAddressVOResult.isSuccess()) {
                 return Result.error(userAddressVOResult.getMessage());
             }
-            userAddressVOMap.computeIfAbsent(addressId, k -> userAddressVOResult.getData());
+            userAddressVOMap.computeIfAbsent(orders.getId(), k -> userAddressVOResult.getData());
         }
 
         //4. 转成VO
@@ -317,5 +318,38 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 
         //7. 返回结果
         return Result.success(ScrollResultVO.of(orderVOList, nextCursor, nextCursorTime, pageSize));
+    }
+
+    @Override
+    public Result<Orders> getByOrderNo(String outTradeNo) {
+//        Long userId = userHolder.getUserId();
+        Orders orders = getOne(new LambdaQueryWrapper<Orders>()
+                .eq(Orders::getOrderNo, outTradeNo)
+//                .eq(Orders::getUserId, userId)
+        );
+        return Result.success(orders);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result<Boolean> updateStatusAndPayTime(String outTradeNo, Integer status) {
+//        Long userId = userHolder.getUserId();
+        Long orderNo = Long.parseLong(outTradeNo);
+        Orders orders = getOne(new LambdaQueryWrapper<Orders>()
+                .eq(Orders::getOrderNo, orderNo)
+//                .eq(Orders::getUserId, userId)
+                .eq(Orders::getStatus, OrderStatus.WAIT_PAY) // 待付款,乐观锁
+        );
+
+        if(orders == null) {
+            return Result.error("订单不存在");
+        }
+
+        orders.setStatus(OrderStatus.getByCode(status));
+        orders.setPayTime(LocalDateTime.now());
+
+        updateById(orders);
+
+        return Result.success(true);
     }
 }

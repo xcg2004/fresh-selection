@@ -26,4 +26,8 @@ public interface IOrdersService extends IService<Orders> {
     Result<OrderVO> selectById(Long orderId);
 
     Result<ScrollResultVO<OrderVO>> scrollPage(ScrollQueryParam scrollQueryParam);
+
+    Result<Orders> getByOrderNo(String outTradeNo);
+
+    Result<Boolean> updateStatusAndPayTime(String outTradeNo, Integer status);
 }

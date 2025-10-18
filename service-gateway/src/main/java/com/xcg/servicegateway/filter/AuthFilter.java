@@ -34,7 +34,8 @@ public class AuthFilter implements GlobalFilter, Ordered {
             "/api/user/login",
             "/api/user/register",
             "/api/public/**",
-            "/api/user/token"
+            "/api/user/token",
+            "/api/alipay/**"
     );
 
 

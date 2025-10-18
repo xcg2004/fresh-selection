@@ -30,7 +30,7 @@ spring:
         - id: payment-service
           uri: lb://service-payment
           predicates:
-              - Path=/api/payment/**
+              - Path=/api/payment-record/**, /api/alipay/**
         - id: category-service
           uri: lb://service-category
           predicates:

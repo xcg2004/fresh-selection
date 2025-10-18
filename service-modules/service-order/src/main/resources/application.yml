@@ -83,5 +83,5 @@ seata:
 
 order:
   delay:
-    cancel-time: 10000  # 30分钟自动取消未支付订单
+    cancel-time: 1800000  # 30分钟自动取消未支付订单
 

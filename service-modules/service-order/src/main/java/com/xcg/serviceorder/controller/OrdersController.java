@@ -5,6 +5,7 @@ import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.core.utils.ScrollQueryParam;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.order.dto.OrderCreateDto;
+import com.xcg.freshcommon.domain.order.entity.Orders;
 import com.xcg.freshcommon.domain.order.vo.OrderVO;
 import com.xcg.freshcommon.enums.PayType;
 import com.xcg.serviceorder.service.IOrdersService;
@@ -58,4 +59,16 @@ public class OrdersController {
         return ordersService.scrollPage(scrollQueryParam);
     }
 
+    @GetMapping("/getByOrderNo")
+    @ApiOperation("根据订单号查询订单")
+    public Result<Orders> getByOrderNo(@RequestParam("outTradeNo") String outTradeNo) {
+        return ordersService.getByOrderNo(outTradeNo);
+    }
+
+    @PutMapping("/update/status-paytime")
+    @ApiOperation("更新订单状态")
+    public Result<Boolean> updateStatusAndPayTime(@RequestParam("outTradeNo") String outTradeNo,
+                                                  @RequestParam("status") Integer status) {
+        return ordersService.updateStatusAndPayTime(outTradeNo, status);
+    }
 }

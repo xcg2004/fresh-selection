@@ -51,7 +51,11 @@
 <!--            <groupId>org.springframework.boot</groupId>-->
 <!--            <artifactId>spring-boot-starter-data-redis</artifactId>-->
 <!--        </dependency>-->
-
-
+        <!--支付宝沙箱支付sdk-->
+        <dependency>
+            <groupId>com.alipay.sdk</groupId>
+            <artifactId>alipay-sdk-java-v3</artifactId>
+            <version>3.1.53.ALL</version>
+        </dependency>
     </dependencies>
 </project>
