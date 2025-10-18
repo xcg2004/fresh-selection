@@ -1,5 +1,6 @@
 package com.xcg.freshcommon.core.utils;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -20,6 +21,7 @@ public class ScrollResultVO<T> {
     private Long nextCursorId;
 
     @ApiModelProperty("下次查询的时间游标")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime nextCursorTime;
 
     @ApiModelProperty("当前页数据数量")

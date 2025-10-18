@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.io.Serializable;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.xcg.freshcommon.enums.GenderEnum;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -68,10 +69,13 @@ public class User implements Serializable {
     private Integer status;
 
     @ApiModelProperty(value = "最后登录时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastLoginTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
 
 

@@ -1,5 +1,6 @@
 package com.xcg.freshcommon.domain.order.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.xcg.freshcommon.domain.orderItem.vo.OrderItemVO;
 import com.xcg.freshcommon.domain.userAddress.vo.UserAddressVO;
 import com.xcg.freshcommon.enums.OrderStatus;
@@ -51,18 +52,23 @@ public class OrderVO implements Serializable {
     private String remark;
 
     @ApiModelProperty(value = "创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
     @ApiModelProperty(value = "更新时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
 
     @ApiModelProperty(value = "支付时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime payTime;
 
     @ApiModelProperty(value = "发货时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime shipTime;
 
     @ApiModelProperty(value = "确认收货时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime confirmTime;
 
     @ApiModelProperty(value = "订单项列表")
