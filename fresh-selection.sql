@@ -400,14 +400,33 @@ CREATE TABLE `banner`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT ='首页轮播图';
 
+-- SeataAT模式undo.log 表
+CREATE TABLE IF NOT EXISTS `undo_log`
+(
+    `id`            BIGINT(20)   NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `branch_id`     BIGINT(20)   NOT NULL COMMENT '事务分支ID，与Seata全局事务关联',
+    `xid`           VARCHAR(100) NOT NULL COMMENT '全局事务ID，唯一标识一个全局事务',
+    `context`       VARCHAR(128) NOT NULL COMMENT '上下文信息，存储事务相关附加数据',
+    `rollback_info` LONGBLOB     NOT NULL COMMENT '回滚数据，序列化后的业务数据前后镜像',
+    `log_status`    TINYINT(4)   NOT NULL COMMENT '日志状态：0-未提交，1-已提交，2-已删除',
+    `log_created`   DATETIME     NOT NULL COMMENT '日志创建时间',
+    `log_modified`  DATETIME     NOT NULL COMMENT '日志修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ux_undo_log` (`xid`, `branch_id`) COMMENT '联合唯一索引，确保一个事务分支对应一条回滚日志'
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8mb4 COMMENT ='Seata AT模式 undo_log 回滚日志表';
+
 -- =============================================
 -- 插入初始数据
 -- =============================================
 
 -- 插入用户数据
 INSERT INTO `user` (`username`, `password`, `phone`, `email`, `nickname`, `avatar`, `gender`)
-VALUES ('user001', 'e10adc3949ba59abbe56e057f20f883e', '13800138001', 'user001@example.com', '小明', '/avatars/default.png', 1),
-       ('user002', 'e10adc3949ba59abbe56e057f20f883e', '13900139001', 'user002@example.com', '小红', '/avatars/default.png', 2);
+VALUES ('user001', 'e10adc3949ba59abbe56e057f20f883e', '13800138001', 'user001@example.com', '小明',
+        '/avatars/default.png', 1),
+       ('user002', 'e10adc3949ba59abbe56e057f20f883e', '13900139001', 'user002@example.com', '小红',
+        '/avatars/default.png', 2);
 
 -- 插入分类数据
 INSERT INTO `category` (`name`, `parent_id`, `level`, `icon`, `sort`)
