@@ -40,7 +40,7 @@ public class OrdersController {
     @ApiOperation("创建订单")
     public Result<Long> create(@RequestBody @Valid List<OrderCreateDto> orderCreateDto,
                                @RequestParam @NotNull Long addressId,
-                               @RequestParam(required = false,defaultValue = "WECHAT") PayType payType) {
+                               @RequestParam(required = false, defaultValue = "WECHAT") PayType payType) {
         log.info("创建订单: {} {} {}", orderCreateDto, addressId, payType);
         return ordersService.create(orderCreateDto, addressId, payType);
     }
@@ -66,9 +66,29 @@ public class OrdersController {
     }
 
     @PutMapping("/update/status-paytime")
-    @ApiOperation("更新订单状态")
+    @ApiOperation("更新订单状态和支付时间")
     public Result<Boolean> updateStatusAndPayTime(@RequestParam("outTradeNo") String outTradeNo,
                                                   @RequestParam("status") Integer status) {
         return ordersService.updateStatusAndPayTime(outTradeNo, status);
     }
+
+    @PutMapping("/cancel/{id}")
+    @ApiOperation("取消订单")
+    public Result<Boolean> cancel(@PathVariable @NotNull Long id) {
+        return ordersService.cancel(id);
+    }
+
+
+    @PutMapping("/check/received/{id}")
+    @ApiOperation("确认收货")
+    public Result<Boolean> checkReceived(@PathVariable @NotNull Long id) {
+        return ordersService.checkReceived(id);
+    }
+
+    @PostMapping("/buy-again/{id}")
+    @ApiOperation("再次购买")
+    public Result<Boolean> rebuy(@PathVariable @NotNull Long id) {
+        return ordersService.rebuy(id);
+    }
+
 }

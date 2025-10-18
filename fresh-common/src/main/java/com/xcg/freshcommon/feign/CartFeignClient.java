@@ -25,5 +25,7 @@ public interface CartFeignClient {
     @DeleteMapping("/batch/delete")
     Result<Boolean> batchDelete(@RequestBody @NotNull List<Long> cartIds);
 
-
+    @PostMapping("/add/{skuId}")
+    Result<Long> add(@PathVariable Long skuId,
+                     @RequestParam("quantity") @NotNull Integer quantity);
 }

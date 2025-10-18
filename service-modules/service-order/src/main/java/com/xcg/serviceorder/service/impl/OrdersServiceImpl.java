@@ -1,7 +1,6 @@
 package com.xcg.serviceorder.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.rabbitmq.client.Address;
 import com.xcg.freshcommon.core.exception.BizException;
 import com.xcg.freshcommon.core.properties.OrderDelayProperties;
 import com.xcg.freshcommon.core.utils.*;
@@ -67,14 +66,14 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
     private final OrderDelayProperties orderDelayProperties;
 
     @Override
-    @GlobalTransactional(name = "order-create", timeoutMills = 60000,rollbackFor = Exception.class)
+    @GlobalTransactional(name = "order-create", timeoutMills = 60000, rollbackFor = Exception.class)
     public Result<Long> create(List<OrderCreateDto> orderCreateDto, Long addressId, PayType payType) {
         //1. 验证参数(非空已经由Spring-Validation处理)
         Long userId = userHolder.getUserId();
 
         // 校验用户地址，分布式场景下跨数据库外键失效
         Result<UserAddressVO> addressResult = userFeignClient.get(addressId);
-        if(!addressResult.isSuccess() || addressResult.getData() == null) {
+        if (!addressResult.isSuccess() || addressResult.getData() == null) {
             throw new BizException(addressResult.getMessage());
         }
 
@@ -84,7 +83,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             Long skuId = createDto.getSkuId();
             Integer quantity = createDto.getQuantity();
             Result<Boolean> cartCheckResult = cartFeignClient.check(cartId, skuId, quantity);
-            if(!cartCheckResult.isSuccess()) {
+            if (!cartCheckResult.isSuccess()) {
                 throw new BizException(cartCheckResult.getMessage());
             }
         }
@@ -96,14 +95,14 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         }
 
         //2. 校验库存
-        Result<Boolean> batchCheckResult= productFeignClient.batchCheckStatusWithStock(skuIdAndQuantity);
-        if(!batchCheckResult.isSuccess()) {
+        Result<Boolean> batchCheckResult = productFeignClient.batchCheckStatusWithStock(skuIdAndQuantity);
+        if (!batchCheckResult.isSuccess()) {
             throw new BizException(batchCheckResult.getMessage());
         }
 
         //3. 扣减库存，锁定库存 stock-= quantity ,lock_stock+= quantity
         Result<List<ProductSku>> listResult = productFeignClient.deductStock(skuIdAndQuantity);
-        if(!listResult.isSuccess()) {
+        if (!listResult.isSuccess()) {
             throw new BizException(listResult.getMessage());
         }
         List<ProductSku> productSkus = listResult.getData();
@@ -158,7 +157,6 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             ProductSku productSku = productSkuMap.get(createDto.getSkuId());
             ordersItem.setOrderId(orders.getId());
             ordersItem.setSkuId(productSku.getId());
-            //todo 商品名称
             Result<Product> productBySkuId = productFeignClient.getProductBySkuId(createDto.getSkuId());
             if (productBySkuId.isSuccess() && productBySkuId.getData() != null) {
                 ordersItem.setProductName(productBySkuId.getData().getName());
@@ -178,7 +176,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 
         //6. 创建订单成功，删除购物车
         Result<Boolean> deleteCartResult = cartFeignClient.batchDelete(orderCreateDto.stream().map(OrderCreateDto::getCartId).collect(Collectors.toList()));
-        if(!deleteCartResult.isSuccess()) {
+        if (!deleteCartResult.isSuccess()) {
             throw new BizException(deleteCartResult.getMessage());
         }
 
@@ -210,10 +208,10 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 
         //2. 查询订单
         Orders orders = getOne(new LambdaQueryWrapper<Orders>()
-                .eq(Orders::getId,orderId)
-                .eq(Orders::getUserId,userId)
+                .eq(Orders::getId, orderId)
+                .eq(Orders::getUserId, userId)
         );
-        if(orders == null) {
+        if (orders == null) {
             return Result.error("订单不存在");
         }
 
@@ -229,7 +227,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 
         //4. 查询收货地址,构建订单收货地址VO
         Result<UserAddressVO> userAddressVOResult = userFeignClient.get(orders.getAddressId());
-        if(!userAddressVOResult.isSuccess()) {
+        if (!userAddressVOResult.isSuccess()) {
             return Result.error(userAddressVOResult.getMessage());
         }
         orderVO.setUserAddressVO(userAddressVOResult.getData());
@@ -289,7 +287,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         for (Orders orders : ordersPage) {
             Long addressId = orders.getAddressId();
             Result<UserAddressVO> userAddressVOResult = userFeignClient.get(addressId);
-            if(!userAddressVOResult.isSuccess()) {
+            if (!userAddressVOResult.isSuccess()) {
                 return Result.error(userAddressVOResult.getMessage());
             }
             userAddressVOMap.computeIfAbsent(orders.getId(), k -> userAddressVOResult.getData());
@@ -324,7 +322,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
     public Result<Orders> getByOrderNo(String outTradeNo) {
 //        Long userId = userHolder.getUserId();
         Orders orders = getOne(new LambdaQueryWrapper<Orders>()
-                .eq(Orders::getOrderNo, outTradeNo)
+                        .eq(Orders::getOrderNo, outTradeNo)
 //                .eq(Orders::getUserId, userId)
         );
         return Result.success(orders);
@@ -336,12 +334,12 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 //        Long userId = userHolder.getUserId();
         Long orderNo = Long.parseLong(outTradeNo);
         Orders orders = getOne(new LambdaQueryWrapper<Orders>()
-                .eq(Orders::getOrderNo, orderNo)
+                        .eq(Orders::getOrderNo, orderNo)
 //                .eq(Orders::getUserId, userId)
-                .eq(Orders::getStatus, OrderStatus.WAIT_PAY) // 待付款,乐观锁
+                        .eq(Orders::getStatus, OrderStatus.WAIT_PAY) // 待付款,乐观锁
         );
 
-        if(orders == null) {
+        if (orders == null) {
             return Result.error("订单不存在");
         }
 
@@ -349,6 +347,87 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         orders.setPayTime(LocalDateTime.now());
 
         updateById(orders);
+
+        return Result.success(true);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result<Boolean> cancel(Long id) {
+        Long userId = userHolder.getUserId();
+
+        Orders orders = getOne(new LambdaQueryWrapper<Orders>()
+                .eq(Orders::getId, id)
+                .eq(Orders::getUserId, userId)
+        );
+
+        if (orders == null) {
+            return Result.error("订单不存在");
+        }
+
+        if (orders.getStatus() == OrderStatus.WAIT_PAY) {
+            orders.setStatus(OrderStatus.CANCEL);
+            updateById(orders);
+        } else {
+            return Result.error("订单状态错误");
+        }
+
+        return Result.success(true);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result<Boolean> checkReceived(Long id) {
+        Long userId = userHolder.getUserId();
+
+        Orders orders = getOne(new LambdaQueryWrapper<Orders>()
+                .eq(Orders::getId, id)
+                .eq(Orders::getUserId, userId)
+        );
+
+        if (orders == null) {
+            return Result.error("订单不存在");
+        }
+
+        if (orders.getStatus() == OrderStatus.WAIT_SHIP || orders.getStatus() == OrderStatus.HAD_SHIP) {
+            orders.setStatus(OrderStatus.HAD_CONFIRM);
+            updateById(orders);
+        } else {
+            return Result.error("订单状态错误");
+        }
+
+        return Result.success(true);
+    }
+
+    @Override
+    @GlobalTransactional(timeoutMills = 30000, name = "service-order-buy-again")
+    public Result<Boolean> rebuy(Long id) {
+        Long userId = userHolder.getUserId();
+
+        Orders orders = getOne(new LambdaQueryWrapper<Orders>()
+                .eq(Orders::getId, id)
+                .eq(Orders::getUserId, userId)
+        );
+
+        if (orders == null) {
+            return Result.error("订单不存在");
+        }
+
+        List<OrderItem> orderItems = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
+                .eq(OrderItem::getOrderId, id)
+        );
+
+        // 获取skuId->quantity
+        Map<Long, Integer> skuIdQuantity = orderItems.stream().collect(
+                Collectors.toMap(OrderItem::getSkuId, OrderItem::getQuantity)
+        );
+
+        skuIdQuantity.forEach((skuId, quantity) -> {
+            Result<Long> addToCart = cartFeignClient.add(skuId, quantity);
+            if (!addToCart.isSuccess()) {
+                throw new BizException(addToCart.getMessage());
+            }
+        });
 
         return Result.success(true);
     }

@@ -30,4 +30,10 @@ public interface IOrdersService extends IService<Orders> {
     Result<Orders> getByOrderNo(String outTradeNo);
 
     Result<Boolean> updateStatusAndPayTime(String outTradeNo, Integer status);
+
+    Result<Boolean> cancel(Long id);
+
+    Result<Boolean> checkReceived(Long id);
+
+    Result<Boolean> rebuy(Long id);
 }
