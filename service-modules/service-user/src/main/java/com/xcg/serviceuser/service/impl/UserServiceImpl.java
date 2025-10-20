@@ -1,18 +1,21 @@
 package com.xcg.serviceuser.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.xcg.freshcommon.core.constants.RedisConstants;
 import com.xcg.freshcommon.core.utils.JwtUtil;
 import com.xcg.freshcommon.core.utils.Result;
-import com.xcg.freshcommon.rabbitmq.constants.RedisConstants;
+
 import com.xcg.freshcommon.domain.user.dto.UserLoginDto;
 import com.xcg.freshcommon.domain.user.dto.UserRegisterDto;
 import com.xcg.freshcommon.domain.user.entity.User;
 import com.xcg.freshcommon.domain.user.vo.UserVO;
 import com.xcg.freshcommon.enums.GenderEnum;
+
 import com.xcg.serviceuser.mapper.UserMapper;
 import com.xcg.serviceuser.service.IUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +40,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     private final JwtUtil jwtUtil;
 
-    private final StringRedisTemplate redisTemplate;
+    private final RedisTemplate<String,Object> redisTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -130,12 +133,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if(userId == null){
             return Result.error("用户ID不能为空");
         }
-
+        //1.查询redis
+        UserVO userVO = (UserVO) redisTemplate.opsForValue().get(RedisConstants.USER_INFO_PREFIX + userId);
+        if(userVO != null) {
+            return Result.success(userVO);
+        }
+        //2.缓存没有则查询数据库，缓存一份到redis
         User user = getById(userId);
         if(user == null){
             return Result.error("用户不存在");
         }
-        return Result.success(UserVO.builder()
+        userVO = UserVO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .phone(user.getPhone())
@@ -144,8 +152,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 .avatar(user.getAvatar())
                 .gender(user.getGender().getDescription())
                 .birthday(user.getBirthday())
-                .lastLoginTime(user.getLastLoginTime()).build()
-        );
+                .lastLoginTime(user.getLastLoginTime())
+                .build();
+        redisTemplate.opsForValue().set(RedisConstants.USER_INFO_PREFIX + userId, userVO);
+        return Result.success(userVO);
     }
 
     @Override

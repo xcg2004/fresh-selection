@@ -7,10 +7,8 @@ import com.xcg.freshcommon.core.utils.ScrollQueryParam;
 import com.xcg.freshcommon.core.utils.ScrollResultVO;
 import com.xcg.freshcommon.domain.cart.vo.CartVO;
 import com.xcg.freshcommon.domain.category.vo.CategoryVO;
-import com.xcg.freshcommon.domain.order.dto.OrderCreateDto;
 import com.xcg.freshcommon.domain.product.dto.ProductDto;
 import com.xcg.freshcommon.domain.product.entity.Product;
-import com.xcg.freshcommon.domain.product.vo.ProductInfoVO;
 import com.xcg.freshcommon.domain.product.vo.ProductScrollVO;
 import com.xcg.freshcommon.domain.productSku.dto.ProductSkuDto;
 import com.xcg.freshcommon.domain.productSku.dto.ProductSkuDto.SkuSpec;
@@ -24,9 +22,11 @@ import com.xcg.serviceproduct.mapper.ProductMapper;
 import com.xcg.serviceproduct.service.IProductService;
 import com.xcg.serviceproduct.service.IProductSkuService;
 import com.xcg.serviceproduct.service.ISkuSpecificationService;
+import com.xcg.freshcommon.core.constants.RedisConstants;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -34,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +55,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     //    private final BrandFeignClient brandFeignClient;
     private final IProductSkuService productSkuService;
     private final ISkuSpecificationService skuSpecificationService;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -380,7 +382,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
             nextCursorTime = productVOs.get(productVOs.size() - 1).getCreateTime();
         }
 
-        ScrollResultVO<ProductScrollVO> result = ScrollResultVO.of(productVOs, nextCursor,nextCursorTime, pageSize);
+        ScrollResultVO<ProductScrollVO> result = ScrollResultVO.of(productVOs, nextCursor, nextCursorTime, pageSize);
         return Result.success(result);
     }
 
@@ -458,21 +460,42 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
         // 获取属性和属性值名称
         try {
-            Result<String> attrNameResult = attributeFeignClient.getAttributeName(skuSpecification.getAttributeId());
-            if (attrNameResult.isSuccess()) {
-                specVO.setAttributeName(attrNameResult.getData());
+            // 先从缓存获取属性名称
+            String attrNameKey = RedisConstants.ATTRIBUTE_NAME_KEY + skuSpecification.getAttributeId();
+            String attrName = (String) redisTemplate.opsForValue().get(attrNameKey);
+            if (attrName == null) {
+                // 缓存未命中，从远程服务获取
+                Result<String> attrNameResult = attributeFeignClient.getAttributeName(skuSpecification.getAttributeId());
+                if (attrNameResult.isSuccess()) {
+                    attrName = attrNameResult.getData();
+                    // 存入缓存
+                    redisTemplate.opsForValue().set(attrNameKey, attrName,
+                            RedisConstants.ATTRIBUTE_NAME_EXPIRE_TIME, TimeUnit.SECONDS);
+                }
             }
+            specVO.setAttributeName(attrName);
 
-            Result<String> attrValueResult = attributeFeignClient.getAttributeValue(skuSpecification.getAttributeValueId());
-            if (attrValueResult.isSuccess()) {
-                specVO.setAttributeValueName(attrValueResult.getData());
+            // 先从缓存获取属性值名称
+            String attrValueNameKey = RedisConstants.ATTRIBUTE_VALUE_NAME_KEY + skuSpecification.getAttributeValueId();
+            String attrValueName = (String) redisTemplate.opsForValue().get(attrValueNameKey);
+            if (attrValueName == null) {
+                // 缓存未命中，从远程服务获取
+                Result<String> attrValueResult = attributeFeignClient.getAttributeValue(skuSpecification.getAttributeValueId());
+                if (attrValueResult.isSuccess()) {
+                    attrValueName = attrValueResult.getData();
+                    // 存入缓存
+                    redisTemplate.opsForValue().set(attrValueNameKey, attrValueName,
+                            RedisConstants.ATTRIBUTE_VALUE_NAME_EXPIRE_TIME, TimeUnit.SECONDS);
+                }
             }
+            specVO.setAttributeValueName(attrValueName);
         } catch (Exception e) {
             log.warn("获取属性或属性值名称失败: {}", e.getMessage());
         }
 
         return specVO;
     }
+
 
     private Integer checkPageSize(Integer pageSize) {
         if (pageSize == null || pageSize <= 0) {
@@ -500,6 +523,10 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         boolean b = updateBatchById(products);
         if (!b) {
             throw new BizException("批量修改商品状态失败");
+        }
+        // 清除缓存
+        for (Long productId : productIds) {
+            clearProductCache(productId);
         }
         return Result.success(true);
     }
@@ -555,26 +582,63 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
     @Override
     public Result<ProductScrollVO> getProductInfo(Long productId) {
-        Product product = productMapper.selectOne(new LambdaQueryWrapper<Product>()
+        String cacheKey = RedisConstants.PRODUCT_INFO_PREFIX + productId;
+
+        // 1. 查询缓存
+        Product product = (Product) redisTemplate.opsForValue().get(cacheKey);
+        if (product != null) {
+            return Result.success(convertToProductScrollVO(product));
+        }
+
+        // 2. 缓存未命中，查询数据库
+        product = productMapper.selectOne(new LambdaQueryWrapper<Product>()
                 .eq(Product::getId, productId)
                 .eq(Product::getStatus, 1)
         );
+
         if (product == null) {
+            // 防止缓存穿透，空值也缓存但设置较短过期时间
+            redisTemplate.opsForValue().set(cacheKey, "",
+                    RedisConstants.PRODUCT_INFO_NULL_EXPIRE_TIME, TimeUnit.SECONDS);
             return Result.error("商品不存在或已下架");
         }
+
+        // 3. 存入缓存
+        redisTemplate.opsForValue().set(cacheKey, product,
+                RedisConstants.PRODUCT_INFO_EXPIRE_TIME, TimeUnit.SECONDS);
+
         ProductScrollVO productScrollVO = convertToProductScrollVO(product);
         return Result.success(productScrollVO);
     }
 
+
     @Override
     public Result<CartVO> fillOtherFields(CartVO cartVO) {
         Long skuId = cartVO.getSkuId();
-        ProductSku productSku = productSkuService.getOne(new LambdaQueryWrapper<ProductSku>()
-                .eq(ProductSku::getId, skuId)
-                .eq(ProductSku::getStatus, 1)
-        );
+        // 缓存ProductSku信息
+        String skuCacheKey = RedisConstants.PRODUCT_INFO_PREFIX + "sku:" + skuId;
+        ProductSku productSku = (ProductSku) redisTemplate.opsForValue().get(skuCacheKey);
+
+        // 缓存未命中
+        if(productSku == null) {
+            // 从数据库获取
+            productSku = productSkuService.getOne(new LambdaQueryWrapper<ProductSku>()
+                    .eq(ProductSku::getId, skuId)
+                    .eq(ProductSku::getStatus, 1)
+            );
+            if (productSku != null) {
+                // 存入缓存
+                redisTemplate.opsForValue().set(skuCacheKey, productSku,
+                        600L, TimeUnit.SECONDS); // 缓存10分钟
+            }
+        }
+        if (productSku == null) {
+            return Result.error("商品SKU不存在或已下架");
+        }
+
         //1.productId
         cartVO.setProductId(productSku.getProductId());
+
         //2.price、originalPrice...
         cartVO.setPrice(productSku.getPrice());
         cartVO.setOriginalPrice(productSku.getOriginalPrice());
@@ -582,18 +646,21 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         cartVO.setImage(productSku.getImage());
         cartVO.setStatus(productSku.getStatus());
         cartVO.setSpecsText(productSku.getSpecsText());
+
         //3.productName
         LambdaQueryWrapper<Product> queryWrapper = new LambdaQueryWrapper<Product>()
                 .eq(Product::getId, productSku.getProductId())
                 .eq(Product::getStatus, 1);
         Product product = getOne(queryWrapper);
         cartVO.setProductName(product.getName());
+
         //4.specList
         List<SkuSpecification> skuSpecifications = skuSpecificationService.list(new LambdaQueryWrapper<SkuSpecification>()
                 .eq(SkuSpecification::getSkuId, skuId)
         );
         List<ProductScrollVO.SkuSpecVO> specVOList = skuSpecifications.stream().map(this::convertToSkuSpecVO).toList();
         cartVO.setSpecList(specVOList);
+        //5.返回结果
         return Result.success(cartVO);
     }
 
@@ -626,6 +693,12 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
         });
         productSkuService.updateBatchById(productSkus);
+        //清除缓存
+        productSkus.forEach(productSku -> {
+            redisTemplate.delete(RedisConstants.PRODUCT_INFO_PREFIX + "sku:" + productSku.getId());
+        });
+
+
         return Result.success(productSkus);
     }
 
@@ -659,6 +732,20 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
             productSku.setLockStock(productSku.getLockStock() - skuIdAndQuantity.get(productSku.getId()));
         });
         productSkuService.updateBatchById(productSkus);
+        //清除缓存
+        productSkus.forEach(productSku -> {
+            redisTemplate.delete(RedisConstants.PRODUCT_INFO_PREFIX + "sku:" + productSku.getId());
+        });
         return Result.success(true);
     }
+
+    /**
+     * 清除商品相关缓存
+     * @param productId 商品ID
+     */
+    private void clearProductCache(Long productId) {
+        // 清除商品信息缓存
+        redisTemplate.delete(RedisConstants.PRODUCT_INFO_PREFIX + productId);
+    }
+
 }

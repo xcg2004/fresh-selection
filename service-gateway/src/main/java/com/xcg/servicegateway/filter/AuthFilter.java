@@ -1,7 +1,7 @@
 package com.xcg.servicegateway.filter;
 
+import com.xcg.freshcommon.core.constants.RedisConstants;
 import com.xcg.freshcommon.core.utils.JwtUtil;
-import com.xcg.freshcommon.rabbitmq.constants.RedisConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;

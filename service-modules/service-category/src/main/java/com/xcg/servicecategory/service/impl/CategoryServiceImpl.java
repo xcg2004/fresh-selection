@@ -2,6 +2,7 @@ package com.xcg.servicecategory.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.xcg.freshcommon.core.constants.RedisConstants;
 import com.xcg.freshcommon.core.exception.BizException;
 import com.xcg.freshcommon.core.utils.Result;
 import com.xcg.freshcommon.domain.category.dto.CategoryBasicUpdateDto;
@@ -14,11 +15,13 @@ import com.xcg.servicecategory.service.ICategoryService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
@@ -36,24 +39,31 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements ICategoryService {
 
     private final CategoryMapper categoryMapper;
+    private final RedisTemplate<String,Object> redisTemplate;
+    private static final long TIMEOUT = 7;
 
     @Override
     public Result<List<CategoryVO>> getTree() {
-        // 查询所有分类
+        //1. 从缓存中获取树形结构
+        List<CategoryVO> treeList = (List<CategoryVO>) redisTemplate.opsForValue().get(RedisConstants.CATEGORY_TREE_KEY);
+        if (treeList != null) {
+            return Result.success(treeList);
+        }
+        //2. 查询所有分类
         List<Category> list = list(new LambdaQueryWrapper<Category>()
                 .eq(Category::getStatus, 1)
                 .last("ORDER BY parent_id, sort, id")
         );
 
-        // 将分类列表转换为VOMap
+        //3. 将分类列表转换为VOMap
         Map<Long, CategoryVO> categoryVOMap = new HashMap<>(list.size());
         for (Category category : list) {
             CategoryVO vo = convertToVO(category);
             categoryVOMap.put(vo.getId(), vo);
         }
 
-        // 构建树形结构
-        List<CategoryVO> treeList = new ArrayList<>();
+        //4. 构建树形结构
+        treeList = new ArrayList<>();
 
         for (CategoryVO categoryVO : categoryVOMap.values()) {
             // 根节点- 顶级分类
@@ -71,9 +81,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
             }
         }
 
-        // 递归排序整个树
+        //5. 递归排序整个树
         sortCategoryTree(treeList);
-
+        redisTemplate.opsForValue().set(RedisConstants.CATEGORY_TREE_KEY, treeList,TIMEOUT, TimeUnit.DAYS);
         return Result.success(treeList);
     }
 
