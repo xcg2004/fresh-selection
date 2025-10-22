@@ -1,24 +1,56 @@
-# Getting Started
+# fresh-selection (生鲜甄选)
 
-### Reference Documentation
+### 项目背景
 
-For further reference, please consider the following sections:
+fresh-selection 是一个用于**生鲜商品甄选**的微服务项目，旨在提供商品管理、分类、检索与简单筛选能力，方便在此基础上扩展电商、内容展示或供应链场景的功能。
 
-* [Official Apache Maven documentation](https://maven.apache.org/guides/index.html)
-* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/3.5.6/maven-plugin)
-* [Create an OCI image](https://docs.spring.io/spring-boot/3.5.6/maven-plugin/build-image.html)
 
-### Guides
+### 功能 / Features
 
-The following guides illustrate how to use some features concretely:
+- 商品（Product、ProductSku）
+- 分类（Category）
+- 属性 (Attribute、AttributeValue)
+- 购物车 (Cart)
+- 订单 (Orders)
+- 支付 (Payment)
+- 用户 (User、UserAddress)
 
-* [Accessing data with MySQL](https://spring.io/guides/gs/accessing-data-mysql/)
+### 技术栈：SpringCloud全家桶、Mybatis-Plus、MySQL、Redis、RabbitMQ、Seata
+### 构建工具：Maven
+### 测试：JUnit、Apifox
 
-### Maven Parent overrides
+### 环境要求 
 
-Due to Maven's design, elements are inherited from the parent POM to the project POM.
-While most of the inheritance is fine, it also inherits unwanted elements like `<license>` and `<developers>` from the
-parent.
-To prevent this, the project POM contains empty overrides for these elements.
-If you manually switch to a different parent and actually want the inheritance, you need to remove those overrides.
+- JDK 17 (SpringBoot 3.2要求)
 
+- Maven
+
+- MySQL、Redis
+
+- RabbitMQ、Seata(2.0)、Nacos(2.3)、Sentinel(可选扩展)
+
+### 快速开始 / Quick Start
+
+###### 克隆仓库 / Clone
+
+bash
+
+git clone https://github.com/xcg2004/fresh-selection.git
+
+##### 使用 Maven 构建 / Build with Maven
+
+bash
+
+cd fresh-selection
+
+mvn clean package
+###  运行（如果项目打包为可执行 jar）
+java -jar target/fresh-selection-0.0.1-SNAPSHOT.jar
+
+启动后访问 API（示例）
+默认基路径（示例）：http://localhost:8080/api/products
+具体接口请参考代码中的 Controller（或利用Apifox生成可视化文档）
+
+仓库地址：https://github.com/xcg2004/fresh-selection
+
+作者：xcg2004
