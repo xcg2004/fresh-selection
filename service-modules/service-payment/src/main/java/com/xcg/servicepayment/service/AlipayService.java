@@ -55,7 +55,7 @@ public class AlipayService {
      * @param request
      * @return
      */
-    @GlobalTransactional(name = "tx-pay-notify")
+    @GlobalTransactional(name = "tx-pay-notify", rollbackFor = Exception.class)
     public String asyncNotify(HttpServletRequest request) {
         try {
             // 验证签名

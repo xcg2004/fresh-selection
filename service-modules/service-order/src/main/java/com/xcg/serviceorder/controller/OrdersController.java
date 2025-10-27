@@ -40,7 +40,7 @@ public class OrdersController {
     @ApiOperation("创建订单")
     public Result<Long> create(@RequestBody @Valid List<OrderCreateDto> orderCreateDto,
                                @RequestParam @NotNull Long addressId,
-                               @RequestParam(required = false, defaultValue = "WECHAT") PayType payType) {
+                               @RequestParam(required = false, defaultValue = "ALIPAY") PayType payType) {
         log.info("创建订单: {} {} {}", orderCreateDto, addressId, payType);
         return ordersService.create(orderCreateDto, addressId, payType);
     }
